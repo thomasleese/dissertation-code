@@ -87,11 +87,7 @@ def find_similarities():
 # sort matching companies
 for a, bs in MATCHING_COMPANIES.items():
     for b in bs:
-        try:
-            companies[a] += companies[b]
-        except KeyError:
-            companies[a] = companies[b]
-
+        companies[a] += companies[b]
         del companies[b]
 
 print(companies[None])
