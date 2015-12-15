@@ -1,6 +1,8 @@
 from collections import OrderedDict
 from difflib import SequenceMatcher
+import sys
 
+import iso3166
 import matplotlib.pyplot as plt
 import numpy as np
 from sqlalchemy import func
@@ -70,45 +72,99 @@ MATCHING_COMPANIES = {
     'Zetetic LLC': ['Zetetic, LLC'],
 }
 
-companies = OrderedDict(session.query(User.company, func.count(User.id))
-                        .group_by(User.company)
-                        .all())
 
+def show_companies(args):
+    companies = OrderedDict(session.query(User.company, func.count(User.id))
+                            .group_by(User.company)
+                            .all())
 
-def find_similarities():
+    def find_similarities():
+        names = list(companies.keys())
+        for i, a in enumerate(names):
+            for b in names[i + 1:]:
+                ratio = SequenceMatcher(None, a, b).ratio()
+                if ratio >= 0.75:
+                    print("'{}'".format(a), "'{}'".format(b), ratio)
+
+    # sort matching companies
+    for a, bs in MATCHING_COMPANIES.items():
+        for b in bs:
+            companies[a] += companies[b]
+            del companies[b]
+
+    print(companies[None])
+    del companies[None]
+
+    # find_similarities()
+
+    # draw graph
+    for name, count in list(companies.items()):
+        if count <= 1:
+            del companies[name]
+        # print(name, count)
+
     names = list(companies.keys())
-    for i, a in enumerate(names):
-        for b in names[i + 1:]:
-            ratio = SequenceMatcher(None, a, b).ratio()
-            if ratio >= 0.75:
-                print("'{}'".format(a), "'{}'".format(b), ratio)
+    counts = list(companies.values())
+    positions = np.arange(len(names))
+
+    plt.figure(figsize=(70, 12), dpi=120)
+    plt.bar(positions, counts)
+    plt.xlim([0, len(names)])
+    plt.xticks(positions + 0.4, names, rotation='vertical')
+    plt.subplots_adjust(bottom=0.3, left=0.02, right=0.98)
+    plt.savefig('companies.png')
 
 
-# sort matching companies
-for a, bs in MATCHING_COMPANIES.items():
-    for b in bs:
-        companies[a] += companies[b]
-        del companies[b]
+def show_countries(args):
+    countries = OrderedDict(session.query(User.location_country,
+                                          func.count(User.id))
+                            .group_by(User.location_country)
+                            .all())
+    del countries[None]
 
-print(companies[None])
-del companies[None]
+    for code in list(countries.keys()):
+        country = iso3166.countries.get(code)
+        countries[country.apolitical_name] = countries[code]
+        del countries[code]
 
-# find_similarities()
+    names = list(countries.keys())
+    counts = list(countries.values())
+    positions = np.arange(len(names))
 
-# draw graph
-for name, count in list(companies.items()):
-    if count <= 1:
-        del companies[name]
-    # print(name, count)
+    plt.figure(figsize=(30, 12), dpi=120)
+    plt.bar(positions, counts)
+    plt.xlim([0, len(names)])
+    plt.xticks(positions + 0.4, names, rotation='vertical')
+    plt.subplots_adjust(bottom=0.2, left=0.02, right=0.98)
+    plt.savefig('countries.png')
 
 
-names = list(companies.keys())
-counts = list(companies.values())
-positions = np.arange(len(names))
+def show_genders(args):
+    genders = OrderedDict(session.query(User.gender, func.count(User.id))
+                          .group_by(User.gender)
+                          .all())
+    del genders[None]
 
-plt.figure(figsize=(70, 12), dpi=120)
-plt.bar(positions, counts)
-plt.xlim([0, len(names)])
-plt.xticks(positions + 0.4, names, rotation='vertical')
-plt.subplots_adjust(bottom=0.3, left=0.02, right=0.98)
-plt.savefig('companies.png')
+    genders['Male'] = genders['M']
+    genders['Female'] = genders['F']
+    #genders['Unknown'] = genders['?']
+    del genders['M']
+    del genders['F']
+    #del genders['?']
+
+    names = list(genders.keys())
+    counts = list(genders.values())
+    positions = np.arange(len(names))
+
+    plt.figure(figsize=(5, 20), dpi=120)
+    plt.bar(positions, counts)
+    plt.xlim([0, len(names)])
+    plt.xticks(positions + 0.4, names, rotation='vertical')
+    plt.subplots_adjust(bottom=0.1, left=0.1, right=0.9)
+    plt.savefig('genders.png')
+
+
+if __name__ == '__main__':
+    name = sys.argv[1]
+    args = sys.argv[2:]
+    locals()[name](args)

@@ -24,6 +24,8 @@ class User(Base):
     email = Column(String(200))
     hireable = Column(Boolean)
     bio = Column(Text)
+    location_country = Column(String(3))
+    gender = Column(String(2))
 
 
 engine = create_engine(DATABASE_URI)
