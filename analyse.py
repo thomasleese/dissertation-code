@@ -145,12 +145,17 @@ def show_genders(args):
                           .all())
     del genders[None]
 
-    genders['Male'] = genders['M']
-    genders['Female'] = genders['F']
-    #genders['Unknown'] = genders['?']
-    del genders['M']
-    del genders['F']
-    #del genders['?']
+    mappings = [
+        ('Male', 'M'),
+        ('Female', 'F'),
+        ('Probably Male', 'M?'),
+        ('Probably Female', 'F?'),
+        #('Unknown', '?')
+    ]
+
+    for mapping in mappings:
+        genders[mapping[0]] = genders[mapping[1]]
+        del genders[mapping[1]]
 
     names = list(genders.keys())
     counts = list(genders.values())

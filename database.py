@@ -1,6 +1,7 @@
 import os
 
-from sqlalchemy import create_engine, Boolean, Column, Integer, String, Text
+from sqlalchemy import create_engine, Boolean, Column, Integer, Numeric, \
+    String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -21,10 +22,12 @@ class User(Base):
     company = Column(String(100))
     blog = Column(String(200))
     location = Column(String(100))
+    location_country = Column(String(3))
+    location_longitude = Column(Numeric(10, 8))
+    location_latitude = Column(Numeric(11, 8))
     email = Column(String(200))
     hireable = Column(Boolean)
     bio = Column(Text)
-    location_country = Column(String(3))
     gender = Column(String(2))
 
 
