@@ -1,8 +1,15 @@
 import os
 import time
 
+import geopy.exc
 from geopy.geocoders import GoogleV3
 import requests
+
+
+def rate_limit_sleep(seconds):
+    minutes = round(seconds / 60, 1)
+    print('!', 'Waiting', minutes, 'minutes.')
+    time.sleep(seconds)
 
 
 class GitHub:
@@ -25,8 +32,7 @@ class GitHub:
         if headers['X-RateLimit-Remaining'] == '0':
             reset_time = int(headers['X-RateLimit-Reset'])
             seconds_remaining = reset_time - int(time.time())
-            print('!', 'Waiting', seconds_remaining, 'seconds.')
-            time.sleep(seconds_remaining)
+            rate_limit_sleep(seconds_remaining)
             return self.get(url, params)
 
         return response
@@ -46,13 +52,14 @@ class Geography:
         self.api_key = os.environ['GOOGLE_API_KEY']
         self.geolocator = GoogleV3(self.api_key)
 
-    def get_country(self, text):
-        time.sleep(1)  # to avoid rate limite
+    def geocode(self, text):
+        try:
+            return self.geolocator.geocode(text)
+        except geopy.exc.GeocoderQuotaExceeded:
+            rate_limit_sleep(60 * 60)
+            return self.geocode(text)
 
-        location = self.geolocator.geocode(text)
-        if location is None:
-            raise ValueError()
-
+    def get_country(self, location):
         for component in location.raw['address_components']:
             if 'country' in component['types']:
                 return component['short_name'], component['long_name']
@@ -61,18 +68,34 @@ class Geography:
 
 
 class Genderize:
-    def guess(self, name):
-        time.sleep(1)  # to avoid rate limite
+    def __init__(self):
+        self.api_key = os.environ['GENDERIZE_API_KEY']
 
-        params = {'name': name}
+    def guess(self, name):
+        params = {'name': name, 'apikey': self.api_key}
         response = requests.get('http://api.genderize.io', params=params)
+
+        headers = response.headers
+        if 'X-Rate-Limit-Remaining' not in headers:
+            rate_limit_sleep(60 * 60)
+            return self.guess(name)
+
+        if headers['X-Rate-Limit-Remaining'] == '0':
+            reset_time = int(headers['X-Rate-Limit-Reset'])
+            seconds_remaining = reset_time
+            rate_limit_sleep(seconds_remaining)
+            return self.guess(name)
+
         data = response.json()
 
         if data['gender'] is None:
             raise ValueError()
 
         probability = float(data['probability'])
-        if probability >= 0.8:
-            return data['gender'][0].upper(), probability
+        code = data['gender'][0].upper()
+        if probability >= 0.9:
+            return code, probability
+        elif probability >= 0.8:
+            return '{}?'.format(code), probability
         else:
-            raise ValueError()
+            return '?'
