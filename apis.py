@@ -51,7 +51,12 @@ class GitHub:
 
         while next_url is not None:
             response = self.get(next_url)
-            next_url = response.links['next']['url']
+
+            try:
+                next_url = response.links['next']['url']
+            except KeyError:
+                next_url = None
+
             for user in response.json():
                 yield user
 

@@ -1,13 +1,18 @@
 import sys
 
+from sqlalchemy import desc, or_
+
 from apis import GitHub, Geography, Genderize
 from database import User, session
 
 
-def users(args):
+def users():
     github = GitHub()
 
-    users = github.get_all_users(int(args[0]))
+    last_user_id = session.query(User.id).order_by(desc(User.id)).limit(1) \
+        .first()[0]
+
+    users = github.get_all_users(last_user_id)
     for github_user in users:
         github_user = github.get(github_user['url']).json()
 
@@ -28,57 +33,60 @@ def users(args):
         session.commit()
 
 
-def user_followings(args):
+def user_followings():
     github = GitHub()
 
-    for user in session.query(User).filter(User.id >= int(args[0])):
+    """for user in session.query(User):
         for other_user in github.get_following_users(user.login):
-            print(other_user)
+            print(other_user)"""
 
 
-def user_locations(args):
+def user_locations():
     geography = Geography()
 
-    for user in session.query(User).filter(User.id >= int(args[0])):
-        if user.location is not None and \
-                (user.location_country is None
-                 or user.location_latitude is None or user.location_longitude):
-            location = geography.geocode(user.location)
-            if location is None:
-                continue
+    query = session.query(User).filter(User.location != None) \
+        .filter(or_(User.location_country == None,
+                    User.location_latitude == None,
+                    User.location_longitude == None))
 
-            try:
-                country_code, country_name = geography.get_country(location)
-            except ValueError:
-                continue
+    for user in query:
+        location = geography.geocode(user.location)
+        if location is None:
+            continue
 
-            print('>', '#{}'.format(user.id), user.login, user.location, '->',
-                  country_code, '({})'.format(country_name))
+        try:
+            country_code, country_name = geography.get_country(location)
+        except ValueError:
+            continue
 
-            user.location_country = country_code
-            user.location_latitude = location.latitude
-            user.location_longitude = location.longitude
+        print('>', '#{}'.format(user.id), user.login, user.location, '->',
+              country_code, '({})'.format(country_name))
 
-            session.commit()
+        user.location_country = country_code
+        user.location_latitude = location.latitude
+        user.location_longitude = location.longitude
+
+        session.commit()
 
 
-def user_genders(args):
+def user_genders():
     genderize = Genderize()
 
-    for user in session.query(User).filter(User.id >= int(args[0])):
-        if user.name is not None and user.gender is None:
-            try:
-                gender, probability = genderize.guess(user.name.split()[0])
-            except ValueError:
-                continue
+    query = session.query(User).filter(User.name != None) \
+        .filter(User.gender == None)
 
-            print('>', '#{}'.format(user.id), user.login, user.name, '->',
-                  gender, '({}%)'.format(probability * 100))
-            user.gender = gender
-            session.commit()
+    for user in query:
+        try:
+            gender, probability = genderize.guess(user.name.split()[0])
+        except ValueError:
+            continue
+
+        print('>', '#{}'.format(user.id), user.login, user.name, '->',
+              gender, '({}%)'.format(probability * 100))
+        user.gender = gender
+        session.commit()
 
 
 if __name__ == '__main__':
-    name = sys.argv[1]
-    args = sys.argv[2:]
-    locals()[name](args)
+    for name in sys.argv[1:]:
+        locals()[name]()
