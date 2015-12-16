@@ -125,9 +125,13 @@ def countries():
     del data[None]
 
     for code in list(data.keys()):
-        country = iso3166.countries.get(code)
-        data[country.apolitical_name] = data[code]
-        del data[code]
+        try:
+            country = iso3166.countries.get(code)
+        except KeyError:
+            continue
+        else:
+            data[country.apolitical_name] = data[code]
+            del data[code]
 
     names = list(data.keys())
     counts = list(data.values())
