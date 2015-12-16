@@ -1,18 +1,22 @@
 from collections import OrderedDict
 from difflib import SequenceMatcher
+import math
 import sys
 
 import iso3166
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 from sqlalchemy import func
 
 from database import User, session
 
 
 MATCHING_COMPANIES = {
+    None: ['private'],
     'Abloom OG': ['abloom'],
     'Adobe': ['Adobe Systems', 'Adobe Systems Inc'],
+    'Amazon': ['Amazon Web Services', 'Amazon.com'],
     'Apple': ['Apple Inc.', 'Apple, Inc.'],
     'Automattic': ['Automattic, Inc.'],
     'Baremetrics, Inc.': ['Baremetrics, Inc'],
@@ -24,7 +28,7 @@ MATCHING_COMPANIES = {
     'Canonical': ['Canonical Ltd'],
     'Cisco': ['Cisco Systems', 'Cisco Systems, Inc.'],
     'Cloud Foundry': ['Pivotal / Cloud Foundry'],
-    'Cookpad': ['Cookpad Inc', 'Cookpad, Inc'],
+    'Cookpad': ['Cookpad Inc', 'Cookpad, Inc', 'COOKPAD Inc.'],
     'Cognitect': ['Cognitect, Inc', 'Cognitect, Inc.'],
     'Color Technology, Inc.': ['Color Technology Inc'],
     'Custom Ink': ['CustomInk', 'CustomInk.com'],
@@ -36,7 +40,7 @@ MATCHING_COMPANIES = {
     'forward.co.uk': ['www.forward.co.uk'],
     'Freelance': ['Freelancer', 'Myself', 'My self', 'Independent',
                   'Self Employed', 'self-employed', 'HOME', 'none',
-                  'n/a', 'NA', 'Self', 'Me'],
+                  'n/a', 'NA', 'Self', 'Me', 'Consultant'],
     'GitHub': ['GitHub, Inc.', 'GitHub Inc.'],
     'Go Free Range': ['Go Free Range Ltd'],
     'Google': ['Google Inc', 'Google Inc.', 'Google, Inc.'],
@@ -47,6 +51,7 @@ MATCHING_COMPANIES = {
     'Insignia': ['(in)signia'],
     'Living Social': ['LivingSocial'],
     'MathWorks': ['The MathWorks'],
+    'Mozilla': ['Mozilla Corporation'],
     'Netflix': ['Netflix, CA', 'Netflix DVD'],
     'Nitrous': ['Nitrous.IO'],
     'Planet Argon': ['Planet Argon, LLC'],
