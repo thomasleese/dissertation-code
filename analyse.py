@@ -73,13 +73,12 @@ MATCHING_COMPANIES = {
 }
 
 
-def show_companies(args):
-    companies = OrderedDict(session.query(User.company, func.count(User.id))
-                            .group_by(User.company)
-                            .all())
+def companies():
+    data = OrderedDict(session.query(User.company, func.count(User.id))
+                       .group_by(User.company))
 
     def find_similarities():
-        names = list(companies.keys())
+        names = list(data.keys())
         for i, a in enumerate(names):
             for b in names[i + 1:]:
                 ratio = SequenceMatcher(None, a, b).ratio()
@@ -89,22 +88,21 @@ def show_companies(args):
     # sort matching companies
     for a, bs in MATCHING_COMPANIES.items():
         for b in bs:
-            companies[a] += companies[b]
-            del companies[b]
+            data[a] += data[b]
+            del data[b]
 
-    print(companies[None])
-    del companies[None]
+    del data[None]
 
     # find_similarities()
 
     # draw graph
-    for name, count in list(companies.items()):
-        if count <= 1:
-            del companies[name]
+    for name, count in list(data.items()):
+        if count <= 2:
+            del data[name]
         # print(name, count)
 
-    names = list(companies.keys())
-    counts = list(companies.values())
+    names = list(data.keys())
+    counts = list(data.values())
     positions = np.arange(len(names))
 
     plt.figure(figsize=(70, 12), dpi=120)
@@ -115,20 +113,19 @@ def show_companies(args):
     plt.savefig('companies.png')
 
 
-def show_countries(args):
-    countries = OrderedDict(session.query(User.location_country,
-                                          func.count(User.id))
-                            .group_by(User.location_country)
-                            .all())
-    del countries[None]
+def countries():
+    data = OrderedDict(session.query(User.location_country,
+                                     func.count(User.id))
+                       .group_by(User.location_country))
+    del data[None]
 
-    for code in list(countries.keys()):
+    for code in list(data.keys()):
         country = iso3166.countries.get(code)
-        countries[country.apolitical_name] = countries[code]
-        del countries[code]
+        data[country.apolitical_name] = data[code]
+        del data[code]
 
-    names = list(countries.keys())
-    counts = list(countries.values())
+    names = list(data.keys())
+    counts = list(data.values())
     positions = np.arange(len(names))
 
     plt.figure(figsize=(30, 12), dpi=120)
@@ -139,26 +136,23 @@ def show_countries(args):
     plt.savefig('countries.png')
 
 
-def show_genders(args):
-    genders = OrderedDict(session.query(User.gender, func.count(User.id))
-                          .group_by(User.gender)
-                          .all())
-    del genders[None]
+def genders():
+    data = OrderedDict(session.query(User.gender, func.count(User.id))
+                       .group_by(User.gender))
+    del data[None]
 
     mappings = [
         ('Male', 'M'),
         ('Female', 'F'),
-        ('Probably Male', 'M?'),
-        ('Probably Female', 'F?'),
-        #('Unknown', '?')
+        ('Unknown', '?')
     ]
 
     for mapping in mappings:
-        genders[mapping[0]] = genders[mapping[1]]
-        del genders[mapping[1]]
+        data[mapping[0]] = data[mapping[1]]
+        del data[mapping[1]]
 
-    names = list(genders.keys())
-    counts = list(genders.values())
+    names = list(data.keys())
+    counts = list(data.values())
     positions = np.arange(len(names))
 
     plt.figure(figsize=(5, 20), dpi=120)
@@ -170,6 +164,5 @@ def show_genders(args):
 
 
 if __name__ == '__main__':
-    name = sys.argv[1]
-    args = sys.argv[2:]
-    locals()[name](args)
+    for name in sys.argv[1:]:
+        locals()[name]()
