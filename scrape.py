@@ -6,6 +6,11 @@ from apis import GitHub, Geography, Genderize
 from database import User, session
 
 
+def print_status(user, *args):
+    print('>', '#{}'.format(user.id), user.login, *args)
+    sys.stdout.flush()
+
+
 def users():
     github = GitHub()
 
@@ -29,6 +34,9 @@ def users():
                 setattr(database_user, field, github_user[field].strip())
 
         database_user = session.merge(database_user)
+
+        print_status(database_user, '✓')
+
         session.add(database_user)
         session.commit()
 
@@ -59,8 +67,8 @@ def user_locations():
         except ValueError:
             continue
 
-        print('>', '#{}'.format(user.id), user.login, user.location, '->',
-              country_code, '({})'.format(country_name))
+        print_status(user, user.location, '->', country_code,
+                     '({})'.format(country_name))
 
         user.location_country = country_code
         user.location_latitude = location.latitude
