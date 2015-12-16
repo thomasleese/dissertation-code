@@ -18,8 +18,6 @@ class GitHub:
         self.client_secret = os.environ['CLIENT_SECRET']
 
     def get(self, url, params=None):
-        print('>', url)
-
         if params is None:
             params = {}
 
