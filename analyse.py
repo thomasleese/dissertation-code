@@ -12,7 +12,7 @@ from database import User, session
 
 MATCHING_COMPANIES = {
     'Abloom OG': ['abloom'],
-    'Adobe Systems': ['Adobe Systems Inc'],
+    'Adobe': ['Adobe Systems', 'Adobe Systems Inc'],
     'Apple': ['Apple Inc.', 'Apple, Inc.'],
     'Automattic': ['Automattic, Inc.'],
     'Baremetrics, Inc.': ['Baremetrics, Inc'],
@@ -37,7 +37,7 @@ MATCHING_COMPANIES = {
     'Freelance': ['Freelancer', 'Myself', 'My self', 'Independent',
                   'Self Employed', 'self-employed', 'HOME', 'none',
                   'n/a', 'NA', 'Self', 'Me'],
-    'GitHub': ['GitHub, Inc.'],
+    'GitHub': ['GitHub, Inc.', 'GitHub Inc.'],
     'Go Free Range': ['Go Free Range Ltd'],
     'Google': ['Google Inc', 'Google Inc.', 'Google, Inc.'],
     'Heroku': ['Heroku, Inc.'],
