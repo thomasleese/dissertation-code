@@ -168,6 +168,30 @@ def genders():
     plt.savefig('genders.png')
 
 
+def world_map():
+    width = 3422
+    height = 1731
+
+    image = Image.open('resources/world-map.png')
+
+    point = Image.open('resources/point.png')
+
+    query = session.query(User.location_latitude, User.location_longitude) \
+        .filter(User.location_latitude != None,
+                User.location_longitude != None)
+
+    for lat, lon in query:
+        lat = float(lat)
+        lon = float(lon)
+
+        x = int((lon + 180) * (width / 360))
+        y = height - int((lat + 90) * (height / 180))
+
+        image.paste(point, (x - 8, y - 8, x + 8, y + 8), point)
+
+    image.save('world_map.png')
+
+
 if __name__ == '__main__':
     for name in sys.argv[1:]:
         locals()[name]()

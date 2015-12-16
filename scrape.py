@@ -20,6 +20,8 @@ def users():
     users = github.get_all_users(last_user_id)
     for github_user in users:
         github_user = github.get(github_user['url']).json()
+        if 'id' not in github_user:
+            continue  # not a user
 
         database_user = User()
 

@@ -66,10 +66,16 @@ class Geography:
 
     def geocode(self, text):
         try:
-            return self.geolocator.geocode(text)
+            result = self.geolocator.geocode(text)
         except geopy.exc.GeocoderQuotaExceeded:
             rate_limit_sleep(60 * 60)
             return self.geocode(text)
+        except geopy.exc.GeocoderTimedOut:
+            rate_limit_sleep(10)
+            return self.geocode(text)
+        else:
+            time.sleep(0.1)  # to avoid rate limiting
+            return result
 
     def get_country(self, location):
         for component in location.raw['address_components']:
