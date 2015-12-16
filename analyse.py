@@ -102,7 +102,7 @@ def companies():
 
     # draw graph
     for name, count in list(data.items()):
-        if count <= 2:
+        if count <= 3:
             del data[name]
         # print(name, count)
 
@@ -114,7 +114,7 @@ def companies():
     plt.bar(positions, counts)
     plt.xlim([0, len(names)])
     plt.xticks(positions + 0.4, names, rotation='vertical')
-    plt.subplots_adjust(bottom=0.3, left=0.02, right=0.98)
+    plt.subplots_adjust(bottom=0.34, left=0.02, right=0.98)
     plt.savefig('companies.png')
 
 
