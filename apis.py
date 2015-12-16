@@ -101,13 +101,8 @@ class Genderize:
         data = response.json()
 
         if data['gender'] is None:
-            raise ValueError()
+            return '?', None
 
         probability = float(data['probability'])
         code = data['gender'][0].upper()
-        if probability >= 0.9:
-            return code, probability
-        elif probability >= 0.8:
-            return '{}?'.format(code), probability
-        else:
-            return '?'
+        return code, probability

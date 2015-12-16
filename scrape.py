@@ -81,17 +81,22 @@ def user_genders():
     genderize = Genderize()
 
     query = session.query(User).filter(User.name != None) \
-        .filter(User.gender == None)
+        .filter((User.gender != '?') | (User.gender == None)) \
+        .filter(User.gender_probability == None)
 
     for user in query:
-        try:
-            gender, probability = genderize.guess(user.name.split()[0])
-        except ValueError:
-            continue
+        gender, probability = genderize.guess(user.name.split()[0])
 
-        print('>', '#{}'.format(user.id), user.login, user.name, '->',
-              gender, '({}%)'.format(probability * 100))
+        try:
+            probability_str = '({}%)'.format(probability * 100)
+        except TypeError:
+            probability_str = '(N/A)'
+
+        print_status(user, user.name, '->', gender, probability_str)
+
         user.gender = gender
+        user.gender_probability = probability
+
         session.commit()
 
 

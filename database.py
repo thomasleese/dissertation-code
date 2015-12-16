@@ -29,6 +29,7 @@ class User(Base):
     hireable = Column(Boolean)
     bio = Column(Text)
     gender = Column(String(2))
+    gender_probability = Column(Numeric(5, 4))
 
 
 engine = create_engine(DATABASE_URI)
