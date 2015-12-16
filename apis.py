@@ -46,6 +46,15 @@ class GitHub:
             for user in response.json():
                 yield user
 
+    def get_following_users(self, username):
+        next_url = 'https://api.github.com/users/{}/following'.format(username)
+
+        while next_url is not None:
+            response = self.get(next_url)
+            next_url = response.links['next']['url']
+            for user in response.json():
+                yield user
+
 
 class Geography:
     def __init__(self):

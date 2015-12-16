@@ -28,6 +28,14 @@ def users(args):
         session.commit()
 
 
+def user_followings(args):
+    github = GitHub()
+
+    for user in session.query(User).filter(User.id >= int(args[0])):
+        for other_user in github.get_following_users(user.login):
+            print(other_user)
+
+
 def user_locations(args):
     geography = Geography()
 
