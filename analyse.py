@@ -2,11 +2,16 @@ from difflib import SequenceMatcher
 import sys
 
 import iso3166
+from joblib import Memory
+from matplotlib import cm
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-from dataset import Database
+from dataset import Database, Events
+
+
+memory = Memory('cache/analyse', verbose=0)
 
 
 MATCHING_COMPANIES = {
@@ -74,6 +79,16 @@ MATCHING_COMPANIES = {
     'Zendesk': ['Zendesk.com'],
     'Zetetic LLC': ['Zetetic, LLC'],
 }
+
+
+def colour_picker():
+    while True:
+        yield 'b'
+        yield 'g'
+        yield 'r'
+        yield 'c'
+        yield 'm'
+        yield 'y'
 
 
 def companies():
@@ -184,6 +199,52 @@ def world_map():
 
     image.save('results/world_map.png')
 
+
+def growth():
+    events = Events()
+
+    """
+    p1 = plt.bar(ind, menMeans, width, color='r', yerr=menStd)
+p2 = plt.bar(ind, womenMeans, width, color='y',
+             bottom=menMeans, yerr=womenStd)
+
+plt.ylabel('Scores')
+plt.title('Scores by group and gender')
+plt.xticks(ind + width/2., ('G1', 'G2', 'G3', 'G4', 'G5'))
+plt.yticks(np.arange(0, 81, 10))
+plt.legend((p1[0], p2[0]), ('Men', 'Women'))
+
+plt.show()
+"""
+
+    N = 12 * 6
+
+    types = list(sorted(events.types))
+
+    data = {s: [] for s in types}
+
+    for year in range(2011, 2017):
+        for month in range(1, 13):
+            print(year, month)
+            counts = events.count_types(year, month)
+            print(counts)
+            for key in data.keys():
+                data[key].append(counts[key])
+
+    ind = np.arange(N)
+
+    plt.figure(figsize=(30, 15), dpi=120)
+
+    legend = {}
+    i = 0
+    for key, value in data.items():
+        legend[key] = plt.bar(ind, value, 0.5, color=cm.jet(i / len(data)))
+        i += 1
+
+    plt.legend(legend.values(), legend.keys())
+
+    plt.xlim([0, len(data)])
+    plt.savefig('results/growth.png')
 
 if __name__ == '__main__':
     for name in sys.argv[1:]:

@@ -5,8 +5,11 @@ import json
 import os
 from pathlib import Path
 
-import msgpack
+from joblib import Memory
 import pymysql
+
+
+memory = Memory('cache/dataset', verbose=0)
 
 
 class Database:
@@ -156,41 +159,40 @@ class Events:
     def __init__(self):
         self.path = Path('../data')
 
-    def iterate_json(self, func=None):
+        self.count = memory.cache(self.count)
+        self.count_types = memory.cache(self.count_types)
+
+    def iterate(self, glob='*.json.gz', func=None):
         gc.disable()
-        for path in self.path.iterdir():
-            with gzip.open(str(path), 'rt') as file:
+        for path in self.path.glob(glob):
+            with gzip.open(str(path), 'rt', errors='ignore') as file:
                 for line in file:
-                    record = json.loads(line)
-                    if func is None:
-                        yield record
-                    else:
-                        yield func(record)
-
-    def iterate_msgpack(self, func=None):
-        gc.disable()
-        for path in self.path.glob('*.msgpack'):
-            with path.open('rb') as file:
-                unpacker = msgpack.Unpacker(file)
-                for record in unpacker:
-                    if func is None:
-                        yield record
-                    else:
-                        yield func(record)
-
-    def optimise_json(self):
-        for path in self.path.iterdir():
-            print(path)
-            with gzip.open(str(path), 'rt') as infile:
-                with open(str(path) + '.msgpack', 'wb') as outfile:
-                    for line in infile:
+                    try:
                         record = json.loads(line)
-                        outfile.write(msgpack.packb(record))
+                    except json.decoder.JSONDecodeError:
+                        continue
+
+                    if record['type'] == 'Event':
+                        continue
+
+                    if func is None:
+                        yield record
+                    else:
+                        yield func(record)
 
     def count(self):
-        iterator = self.iterate_msgpack(func=lambda event: event[b'type'])
+        iterator = self.iterate(func=lambda event: event['type'])
         counter = Counter(iterator)
         return counter
+
+    @property
+    def types(self):
+        return list(self.count().keys())
+
+    def count_types(self, year, month):
+        glob = '{}-{:02d}-*.json.gz'.format(year, month)
+        iterator = self.iterate(glob, func=lambda e: e['type'])
+        return Counter(iterator)
 
 
 def count():
