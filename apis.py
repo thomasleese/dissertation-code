@@ -3,7 +3,11 @@ import time
 
 import geopy.exc
 from geopy.geocoders import GoogleV3
+from joblib import Memory
 import requests
+
+
+memory = Memory('caches', verbose=0)
 
 
 def rate_limit_sleep(seconds):
@@ -64,6 +68,8 @@ class Geography:
         self.api_key = os.environ['GOOGLE_API_KEY']
         self.geolocator = GoogleV3(self.api_key)
 
+        self.geocode = memory.cache(self.geocode)
+
     def geocode(self, text):
         try:
             result = self.geolocator.geocode(text)
@@ -88,8 +94,12 @@ class Geography:
 class Genderize:
     def __init__(self):
         self.api_key = os.environ['GENDERIZE_API_KEY']
+        self.guess = memory.cache(self.guess)
 
     def guess(self, name):
+        if name == "<script>alert('test')</script>":
+            return '?', None
+
         params = {'name': name, 'apikey': self.api_key}
         response = requests.get('http://api.genderize.io', params=params)
 
