@@ -1,19 +1,17 @@
 from collections import OrderedDict
 from difflib import SequenceMatcher
-import math
 import sys
 
 import iso3166
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from sqlalchemy import func
 
-from database import User, session
+from dataset import Database
 
 
 MATCHING_COMPANIES = {
-    None: ['private'],
+    '.PROMO Inc': ['.PROMO Inc.'],
     'Abloom OG': ['abloom'],
     'Adobe': ['Adobe Systems', 'Adobe Systems Inc'],
     'Amazon': ['Amazon Web Services', 'Amazon.com'],
@@ -40,7 +38,8 @@ MATCHING_COMPANIES = {
     'forward.co.uk': ['www.forward.co.uk'],
     'Freelance': ['Freelancer', 'Myself', 'My self', 'Independent',
                   'Self Employed', 'self-employed', 'HOME', 'none',
-                  'n/a', 'NA', 'Self', 'Me', 'Consultant'],
+                  'n/a', 'NA', 'Self', 'Me', 'Consultant', '(Independent)',
+                  'Independant'],
     'GitHub': ['GitHub, Inc.', 'GitHub Inc.'],
     'Go Free Range': ['Go Free Range Ltd'],
     'Google': ['Google Inc', 'Google Inc.', 'Google, Inc.'],
@@ -79,8 +78,18 @@ MATCHING_COMPANIES = {
 
 
 def companies():
-    data = OrderedDict(session.query(User.company, func.count(User.id))
-                       .group_by(User.company))
+    database = Database()
+
+    with database.cursor() as cursor:
+        cursor.execute("""
+            SELECT company, COUNT(id)
+            FROM users
+            WHERE company IS NOT NULL
+            GROUP BY company
+        """)
+        data = OrderedDict(cursor)
+
+    database.close()
 
     def find_similarities():
         names = list(data.keys())
@@ -95,8 +104,6 @@ def companies():
         for b in bs:
             data[a] += data[b]
             del data[b]
-
-    del data[None]
 
     # find_similarities()
 
@@ -119,10 +126,18 @@ def companies():
 
 
 def countries():
-    data = OrderedDict(session.query(User.location_country,
-                                     func.count(User.id))
-                       .group_by(User.location_country))
-    del data[None]
+    database = Database()
+
+    with database.cursor() as cursor:
+        cursor.execute("""
+            SELECT location_country, COUNT(id)
+            FROM users
+            WHERE location_country IS NOT NULL
+            GROUP BY location_country
+        """)
+        data = OrderedDict(cursor)
+
+    database.close()
 
     for code in list(data.keys()):
         try:
@@ -146,9 +161,18 @@ def countries():
 
 
 def genders():
-    data = OrderedDict(session.query(User.gender, func.count(User.id))
-                       .group_by(User.gender))
-    del data[None]
+    database = Database()
+
+    with database.cursor() as cursor:
+        cursor.execute("""
+            SELECT gender, COUNT(id)
+            FROM users
+            WHERE gender IS NOT NULL
+            GROUP BY gender
+        """)
+        data = OrderedDict(cursor)
+
+    database.close()
 
     mappings = [
         ('Male', 'M'),
@@ -180,18 +204,26 @@ def world_map():
 
     point = Image.open('resources/point.png')
 
-    query = session.query(User.location_latitude, User.location_longitude) \
-        .filter(User.location_latitude != None,
-                User.location_longitude != None)
+    database = Database()
 
-    for lat, lon in query:
-        lat = float(lat)
-        lon = float(lon)
+    with database.cursor() as cursor:
+        cursor.execute("""
+            SELECT location_latitude, location_longitude
+            FROM users
+            WHERE location_latitude IS NOT NULL
+                AND location_longitude IS NOT NULL
+        """)
 
-        x = int((lon + 180) * (width / 360))
-        y = height - int((lat + 90) * (height / 180))
+        for lat, lon in cursor:
+            lat = float(lat)
+            lon = float(lon)
 
-        image.paste(point, (x - 8, y - 8, x + 8, y + 8), point)
+            x = int((lon + 180) * (width / 360))
+            y = height - int((lat + 90) * (height / 180))
+
+            image.paste(point, (x - 8, y - 8, x + 8, y + 8), point)
+
+    database.close()
 
     image.save('world_map.png')
 
