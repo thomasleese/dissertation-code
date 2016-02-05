@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from difflib import SequenceMatcher
 import sys
 
@@ -79,17 +78,7 @@ MATCHING_COMPANIES = {
 
 def companies():
     database = Database()
-
-    with database.cursor() as cursor:
-        cursor.execute("""
-            SELECT company, COUNT(id)
-            FROM users
-            WHERE company IS NOT NULL
-            GROUP BY company
-        """)
-        data = OrderedDict(cursor)
-
-    database.close()
+    data = database.get_company_distribution()
 
     def find_similarities():
         names = list(data.keys())
@@ -122,22 +111,12 @@ def companies():
     plt.xlim([0, len(names)])
     plt.xticks(positions + 0.4, names, rotation='vertical')
     plt.subplots_adjust(bottom=0.34, left=0.02, right=0.98)
-    plt.savefig('companies.png')
+    plt.savefig('results/companies.png')
 
 
 def countries():
     database = Database()
-
-    with database.cursor() as cursor:
-        cursor.execute("""
-            SELECT location_country, COUNT(id)
-            FROM users
-            WHERE location_country IS NOT NULL
-            GROUP BY location_country
-        """)
-        data = OrderedDict(cursor)
-
-    database.close()
+    data = database.get_country_distribution()
 
     for code in list(data.keys()):
         try:
@@ -157,22 +136,12 @@ def countries():
     plt.xlim([0, len(names)])
     plt.xticks(positions + 0.4, names, rotation='vertical')
     plt.subplots_adjust(bottom=0.2, left=0.02, right=0.98)
-    plt.savefig('countries.png')
+    plt.savefig('results/countries.png')
 
 
 def genders():
     database = Database()
-
-    with database.cursor() as cursor:
-        cursor.execute("""
-            SELECT gender, COUNT(id)
-            FROM users
-            WHERE gender IS NOT NULL
-            GROUP BY gender
-        """)
-        data = OrderedDict(cursor)
-
-    database.close()
+    data = database.get_gender_distribution()
 
     mappings = [
         ('Male', 'M'),
@@ -193,7 +162,7 @@ def genders():
     plt.xlim([0, len(names)])
     plt.xticks(positions + 0.4, names, rotation='vertical')
     plt.subplots_adjust(bottom=0.1, left=0.1, right=0.9)
-    plt.savefig('genders.png')
+    plt.savefig('results/genders.png')
 
 
 def world_map():
@@ -201,31 +170,19 @@ def world_map():
     height = 1731
 
     image = Image.open('resources/world-map.png')
-
     point = Image.open('resources/point.png')
 
     database = Database()
+    for lat, lon in database.get_location_points():
+        lat = float(lat)
+        lon = float(lon)
 
-    with database.cursor() as cursor:
-        cursor.execute("""
-            SELECT location_latitude, location_longitude
-            FROM users
-            WHERE location_latitude IS NOT NULL
-                AND location_longitude IS NOT NULL
-        """)
+        x = int((lon + 180) * (width / 360))
+        y = height - int((lat + 90) * (height / 180))
 
-        for lat, lon in cursor:
-            lat = float(lat)
-            lon = float(lon)
+        image.paste(point, (x - 8, y - 8, x + 8, y + 8), point)
 
-            x = int((lon + 180) * (width / 360))
-            y = height - int((lat + 90) * (height / 180))
-
-            image.paste(point, (x - 8, y - 8, x + 8, y + 8), point)
-
-    database.close()
-
-    image.save('world_map.png')
+    image.save('results/world_map.png')
 
 
 if __name__ == '__main__':
