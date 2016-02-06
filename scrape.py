@@ -86,7 +86,8 @@ class Geography:
             time.sleep(0.1)  # to avoid rate limiting
             return result
 
-    def get_country(self, location):
+    @staticmethod
+    def get_country(location):
         for component in location.raw['address_components']:
             if 'country' in component['types']:
                 return component['short_name'], component['long_name']

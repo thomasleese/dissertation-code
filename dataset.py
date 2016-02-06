@@ -1,23 +1,23 @@
-from collections import Counter, OrderedDict
 import gc
 import gzip
 import json
-import os
+from collections import Counter, OrderedDict
 from pathlib import Path
 
-from joblib import Memory
 import pymysql
+from joblib import Memory
 
+import settings
 
 memory = Memory('cache/dataset', verbose=0)
 
 
 class Database:
     def __init__(self):
-        self.connection = pymysql.connect(host=os.environ['DB_HOST'],
-                                          user=os.environ['DB_USER'],
-                                          password=os.environ['DB_PASSWORD'],
-                                          db=os .environ['DB_NAME'],
+        self.connection = pymysql.connect(host=settings.DB_HOST,
+                                          user=settings.DB_USER,
+                                          password=settings.DB_PASSWORD,
+                                          db=settings.DB_NAME,
                                           charset='utf8')
 
     def cursor(self):
@@ -169,7 +169,7 @@ class Events:
                 for line in file:
                     try:
                         record = json.loads(line)
-                    except json.decoder.JSONDecodeError:
+                    except json.JSONDecodeError:
                         continue
 
                     if record['type'] == 'Event':

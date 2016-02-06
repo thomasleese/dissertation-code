@@ -10,7 +10,6 @@ from PIL import Image
 
 from dataset import Database, Events
 
-
 memory = Memory('cache/analyse', verbose=0)
 
 
@@ -79,16 +78,6 @@ MATCHING_COMPANIES = {
     'Zendesk': ['Zendesk.com'],
     'Zetetic LLC': ['Zetetic, LLC'],
 }
-
-
-def colour_picker():
-    while True:
-        yield 'b'
-        yield 'g'
-        yield 'r'
-        yield 'c'
-        yield 'm'
-        yield 'y'
 
 
 def companies():
@@ -217,7 +206,7 @@ plt.legend((p1[0], p2[0]), ('Men', 'Women'))
 plt.show()
 """
 
-    N = 12 * 6
+    n = 12 * 6
 
     types = list(sorted(events.types))
 
@@ -231,21 +220,21 @@ plt.show()
             for key in data.keys():
                 data[key].append(counts[key])
 
-    ind = np.arange(N)
+    ind = np.arange(n)
 
     plt.figure(figsize=(30, 15), dpi=120)
 
     legend = {}
-    i = 0
-    for key, value in data.items():
+    for i, (key, value) in enumerate(data.items()):
         legend[key] = plt.bar(ind, value, 0.5, color=cm.jet(i / len(data)))
-        i += 1
 
     plt.legend(legend.values(), legend.keys())
 
     plt.xlim([0, len(data)])
     plt.savefig('results/growth.png')
 
+
 if __name__ == '__main__':
     for name in sys.argv[1:]:
+        print('Analysing:', name)
         locals()[name]()
