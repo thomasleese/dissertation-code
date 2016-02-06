@@ -1,6 +1,7 @@
 *.pyc
 
-/.env
 /venv
 /results
 /cache
+
+/settings.py
