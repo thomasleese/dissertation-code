@@ -62,7 +62,7 @@ class Database:
     def get_company_distribution(self):
         with self.cursor() as cursor:
             cursor.execute("""
-                SELECT company, COUNT(id)
+                SELECT company, COUNT(*)
                 FROM users
                 WHERE company IS NOT NULL
                 GROUP BY company

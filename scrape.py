@@ -159,7 +159,7 @@ def users():
 
         database.insert_user(fields)
 
-        print_status(fields['id'], fields['login'], '✓')
+        print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
 
     database.close()
 
