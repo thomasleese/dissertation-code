@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 
@@ -8,6 +7,7 @@ from joblib import Memory
 import requests
 
 from dataset import Database
+import settings
 
 
 memory = Memory('cache/scrape', verbose=0)
@@ -21,8 +21,8 @@ def rate_limit_sleep(seconds):
 
 class GitHub:
     def __init__(self):
-        self.client_id = os.environ['CLIENT_ID']
-        self.client_secret = os.environ['CLIENT_SECRET']
+        self.client_id = settings.CLIENT_ID
+        self.client_secret = settings.CLIENT_SECRET
 
     def get(self, url, params=None):
         if params is None:
@@ -68,7 +68,7 @@ class GitHub:
 
 class Geography:
     def __init__(self):
-        self.api_key = os.environ['GOOGLE_API_KEY']
+        self.api_key = settings.GOOGLE_API_KEY
         self.geolocator = GoogleV3(self.api_key)
 
         self.geocode = memory.cache(self.geocode)
@@ -97,7 +97,7 @@ class Geography:
 
 class Genderize:
     def __init__(self):
-        self.api_key = os.environ['GENDERIZE_API_KEY']
+        self.api_key = settings.GENDERIZE_API_KEY
         self.guess = memory.cache(self.guess)
 
     def guess(self, name):
