@@ -155,7 +155,7 @@ def users():
 
         github_user = github.get_user(user_login)
         if 'id' not in github_user or user_id != github_user['id']:  # no longer a user
-            database.insert_user({'id': user_id, 'deleted': True})
+            database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
             print_status(user_id, ':(')
             continue
 
