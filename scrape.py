@@ -143,6 +143,12 @@ def users():
     events = Events()
 
     for event in events.iterate():
+        if 'actor' not in event:
+            continue
+
+        if 'id' not in event['actor']:
+            continue
+
         user_id = event['actor']['id']
         if database.has_user(user_id):
             continue
@@ -152,7 +158,7 @@ def users():
             continue
 
         if database.has_user(github_user['id']):
-            print(':(')
+            print('! User has changed identity.')
             continue
 
         fields = {
