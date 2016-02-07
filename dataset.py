@@ -49,6 +49,11 @@ class Database:
             cursor.execute('SELECT id FROM users ORDER BY id DESC LIMIT 1')
             return cursor.fetchone()[0]
 
+    def has_user(self, user_id):
+        with self.cursor() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM users WHERE id = %s', (user_id,))
+            return cursor.fetchone()[0] > 0
+
     def insert_user(self, fields):
         with self.cursor() as cursor:
             fields_str = ', '.join(fields.keys())

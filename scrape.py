@@ -6,7 +6,7 @@ from geopy.geocoders import GoogleV3
 from joblib import Memory
 import requests
 
-from dataset import Database
+from dataset import Database, Events
 import settings
 
 
@@ -50,6 +50,10 @@ class GitHub:
             next_url = response.links['next']['url']
             for user in response.json():
                 yield user
+
+    def get_user(self, username):
+        url = 'https://api.github.com/users/{}'.format(username)
+        return self.get(url).json()
 
     def get_following_users(self, username):
         next_url = 'https://api.github.com/users/{}/following'.format(username)
@@ -136,14 +140,20 @@ def print_status(user_id, *args):
 def users():
     github = GitHub()
     database = Database()
+    events = Events()
 
-    last_user_id = database.last_user_id
+    for event in events.iterate():
+        user_id = event['actor']['id']
+        if database.has_user(user_id):
+            continue
 
-    users = github.get_all_users(last_user_id)
-    for github_user in users:
-        github_user = github.get(github_user['url']).json()
-        if 'id' not in github_user:
-            continue  # not a user
+        github_user = github.get_user(event['actor']['login'])
+        if 'id' not in github_user:  # no longer a user
+            continue
+
+        if database.has_user(github_user['id']):
+            print(':(')
+            continue
 
         fields = {
             'id': github_user['id'],
