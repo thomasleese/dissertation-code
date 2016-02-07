@@ -143,22 +143,20 @@ def users():
     events = Events()
 
     for event in events.iterate():
-        if 'actor' not in event:
+        try:
+            actor = event['actor']
+            user_id = actor['id']
+            user_login = actor['login']
+        except KeyError:
             continue
 
-        if 'id' not in event['actor']:
-            continue
-
-        user_id = event['actor']['id']
         if database.has_user(user_id):
             continue
 
-        github_user = github.get_user(event['actor']['login'])
-        if 'id' not in github_user:  # no longer a user
-            continue
-
-        if database.has_user(github_user['id']):
-            print('! User has changed identity.')
+        github_user = github.get_user(user_login)
+        if 'id' not in github_user or user_id != github_user['id']:  # no longer a user
+            database.insert_user({'id': user_id, 'deleted': True})
+            print_status(user_id, ':(')
             continue
 
         fields = {

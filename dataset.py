@@ -170,6 +170,7 @@ class Events:
     def iterate(self, glob='*.json.gz', func=None):
         gc.disable()
         for path in self.path.glob(glob):
+            print('Loading events:', path)
             with gzip.open(str(path), 'rt', errors='ignore') as file:
                 for line in file:
                     try:
