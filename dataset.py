@@ -175,7 +175,7 @@ class Events:
                 for line in file:
                     try:
                         record = json.loads(line)
-                    except json.decoder.JSONDecodeError:
+                    except ValueError:
                         continue
 
                     if record['type'] == 'Event':
