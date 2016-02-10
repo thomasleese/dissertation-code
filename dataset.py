@@ -167,7 +167,7 @@ class Events:
         self.count = memory.cache(self.count)
         self.count_types = memory.cache(self.count_types)
 
-    def iterate(self, glob='*.json.gz', func=None):
+    def iterate(self, glob='*.json.gz', func=None, with_names=False):
         gc.disable()
         for path in self.path.glob(glob):
             print('Loading events:', path)
@@ -181,10 +181,13 @@ class Events:
                     if record['type'] == 'Event':
                         continue
 
-                    if func is None:
-                        yield record
+                    if func is not None:
+                        record = func(record)
+
+                    if with_names:
+                        yield path.name, record
                     else:
-                        yield func(record)
+                        yield record
 
     def count(self):
         iterator = self.iterate(func=lambda event: event['type'])

@@ -13,10 +13,20 @@ import settings
 memory = Memory('cache/scrape', verbose=0)
 
 
-def rate_limit_sleep(seconds):
-    minutes = round(seconds / 60, 1)
-    print('!', 'Waiting', minutes, 'minutes.')
-    time.sleep(seconds)
+class RateLimitError(RuntimeError):
+    def __init__(self, reset_time):
+        self.reset_time = reset_time
+        self.start_time = int(time.time())
+
+    @property
+    def seconds_left(self):
+        return self.reset_time - self.start_time
+
+    def wait(self):
+        seconds = self.seconds_left
+        minutes = round(self.seconds_left / 60, 1)
+        print('!', 'Waiting', minutes, 'minutes.')
+        time.sleep(seconds)
 
 
 class GitHub:
@@ -36,9 +46,7 @@ class GitHub:
         headers = response.headers
         if headers['X-RateLimit-Remaining'] == '0':
             reset_time = int(headers['X-RateLimit-Reset'])
-            seconds_remaining = reset_time - int(time.time())
-            rate_limit_sleep(seconds_remaining)
-            return self.get(url, params)
+            raise RateLimitError(reset_time)
 
         return response
 
@@ -81,11 +89,9 @@ class Geography:
         try:
             result = self.geolocator.geocode(text)
         except geopy.exc.GeocoderQuotaExceeded:
-            rate_limit_sleep(60 * 60)
-            return self.geocode(text)
+            raise RateLimitError(int(time.time()) + (60 * 60))
         except geopy.exc.GeocoderTimedOut:
-            rate_limit_sleep(10)
-            return self.geocode(text)
+            raise RateLimitError(int(time.time()) + 10)
         else:
             time.sleep(0.1)  # to avoid rate limiting
             return result
@@ -113,14 +119,11 @@ class Genderize:
 
         headers = response.headers
         if 'X-Rate-Limit-Remaining' not in headers:
-            rate_limit_sleep(60 * 60)
-            return self.guess(name)
+            raise RateLimitError(int(time.time()) + (60 * 60))
 
         if headers['X-Rate-Limit-Remaining'] == '0':
             reset_time = int(headers['X-Rate-Limit-Reset'])
-            seconds_remaining = reset_time
-            rate_limit_sleep(seconds_remaining)
-            return self.guess(name)
+            raise RateLimitError(reset_time)
 
         data = response.json()
 
@@ -145,39 +148,56 @@ class Scraper:
         print('>', '#{}'.format(user_id), *args)
         sys.stdout.flush()
 
-    def scrape_users(self):
-        for event in self.events.iterate():
-            try:
-                actor = event['actor']
-                user_id = actor['id']
-                user_login = actor['login']
-            except KeyError:
-                continue
+    def scrape_event(self, event):
+        try:
+            actor = event['actor']
+            user_id = actor['id']
+            user_login = actor['login']
+        except KeyError:
+            return
 
-            if self.database.has_user(user_id):
-                continue
+        if self.database.has_user(user_id):
+            return
 
-            github_user = self.github.get_user(user_login)
-            if 'id' not in github_user or user_id != github_user['id']:  # no longer a user
-                self.database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
-                self.print_status(user_id, ':(')
-                continue
+        github_user = self.github.get_user(user_login)
+        if 'id' not in github_user or user_id != github_user['id']:  # no longer a user
+            self.database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
+            self.print_status(user_id, ':(')
+            return
 
-            fields = {
-                'id': github_user['id'],
-                'hireable': github_user['hireable']
-            }
+        fields = {
+            'id': github_user['id'],
+            'hireable': github_user['hireable']
+        }
 
-            for field in ['login', 'avatar_url', 'gravatar_id', 'name', 'company',
-                          'blog', 'location', 'email', 'bio']:
-                if github_user[field] is None:
-                    fields[field] = None
+        for field in ['login', 'avatar_url', 'gravatar_id', 'name', 'company',
+                      'blog', 'location', 'email', 'bio']:
+            if github_user[field] is None:
+                fields[field] = None
+            else:
+                fields[field] = github_user[field].strip()
+
+        self.database.insert_user(fields)
+
+        self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
+
+    def scrape(self, start_from):
+        started = False
+
+        for name, event in self.events.iterate(with_names=True):
+            if not started:
+                if name.startswith(start_from):
+                    started = True
                 else:
-                    fields[field] = github_user[field].strip()
+                    continue
 
-            self.database.insert_user(fields)
-
-            self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
+            while True:
+                try:
+                    self.scrape_event(event)
+                    break
+                except RateLimitError as e:
+                    e.wait()
+                    continue
 
     def scrape_locations(self):
         for user_id, location_str in self.database.users_without_location:
@@ -213,4 +233,4 @@ class Scraper:
 
 if __name__ == '__main__':
     scraper = Scraper()
-    scraper.scrape_users()
+    scraper.scrape(sys.argv[1])
