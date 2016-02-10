@@ -16,13 +16,19 @@ memory = Memory('cache/scrape', verbose=0)
 class RateLimitError(RuntimeError):
     def __init__(self, reset_time):
         self.reset_time = reset_time
-        self.start_time = int(time.time())
 
     @property
     def seconds_left(self):
-        return self.reset_time - self.start_time
+        return self.reset_time - int(time.time())
+
+    @property
+    def finished(self):
+        return self.seconds_left <= 0
 
     def wait(self):
+        if self.finished:
+            return
+
         seconds = self.seconds_left
         minutes = round(self.seconds_left / 60, 1)
         print('!', 'Waiting', minutes, 'minutes.')
@@ -200,8 +206,14 @@ class Scraper:
                     self.scrape_event(event)
                     break
                 except RateLimitError as e:
+                    while not e.finished:
+                        try:
+                            self.scrape_locations(25)
+                            self.scrape_genders(25)
+                        except RateLimitError:
+                            break
+
                     e.wait()
-                    continue
 
     def scrape_locations(self, n=100):
         users = self.database.get_users_without_location(limit=n)
