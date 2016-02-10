@@ -182,6 +182,10 @@ class Scraper:
         self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
 
     def scrape(self, start_from):
+        self.scrape_locations(4)
+        self.scrape_genders(4)
+        return
+
         started = False
 
         for name, event in self.events.iterate(with_names=True):
@@ -199,15 +203,21 @@ class Scraper:
                     e.wait()
                     continue
 
-    def scrape_locations(self):
-        for user_id, location_str in self.database.users_without_location:
+    def scrape_locations(self, n=100):
+        users = self.database.get_users_without_location(limit=n)
+        for user_id, location_str in users:
             location = self.geography.geocode(location_str)
             if location is None:
+                self.print_status(user_id, location_str, '->', '?')
+                self.database.update_user_location(user_id, None, None, '?')
                 continue
 
             try:
-                country_code, country_name = self.geography.get_country(location)
+                country_code, country_name = \
+                    self.geography.get_country(location)
             except ValueError:
+                self.print_status(user_id, location_str, '->', '?')
+                self.database.update_user_location(user_id, None, None, '?')
                 continue
 
             self.print_status(user_id, location_str, '->', country_code,
@@ -217,8 +227,9 @@ class Scraper:
                                                location.longitude,
                                                country_code)
 
-    def scrape_genders(self):
-        for user_id, name in self.database.users_without_gender:
+    def scrape_genders(self, n=100):
+        users = self.database.get_users_without_gender(limit=n)
+        for user_id, name in users:
             gender, probability = self.genderize.guess(name.split()[0])
 
             try:

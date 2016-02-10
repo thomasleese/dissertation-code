@@ -106,23 +106,22 @@ class Database:
             for row in cursor:
                 yield row
 
-    @property
-    def users_without_location(self):
+    def get_users_without_location(self, limit):
         with self.cursor() as cursor:
             cursor.execute("""
                 SELECT id, location
                 FROM users
                 WHERE location IS NOT NULL
-                    AND (location_country IS NULL
-                        OR location_latitude IS NULL
-                        OR location_longitude IS NULL)
-            """)
+                    AND location_country IS NULL
+                    AND location_latitude IS NULL
+                    AND location_longitude IS NULL
+                LIMIT %s
+            """, (limit,))
 
             for row in cursor:
                 yield row
 
-    @property
-    def users_without_gender(self):
+    def get_users_without_gender(self, limit):
         with self.cursor() as cursor:
             cursor.execute("""
                 SELECT id, name
@@ -130,7 +129,8 @@ class Database:
                 WHERE name IS NOT NULL
                     AND (gender IS NULL OR gender != '?')
                     AND gender_probability IS NULL
-            """)
+                LIMIT %s
+            """, (limit,))
 
             for row in cursor:
                 yield row
