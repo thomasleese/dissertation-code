@@ -188,15 +188,7 @@ class Scraper:
         self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
 
     def scrape(self, start_from):
-        started = False
-
-        for name, event in self.events.iterate(with_names=True):
-            if not started:
-                if name.startswith(start_from):
-                    started = True
-                else:
-                    continue
-
+        for event in self.events.iterate(start_from=start_from):
             while True:
                 try:
                     self.scrape_event(event)

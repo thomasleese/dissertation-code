@@ -167,9 +167,18 @@ class Events:
         self.count = memory.cache(self.count)
         self.count_types = memory.cache(self.count_types)
 
-    def iterate(self, glob='*.json.gz', func=None, with_names=False):
+    def iterate(self, glob='*.json.gz', func=None, start_from=None):
         gc.disable()
+
+        started = start_from is None
+
         for path in self.path.glob(glob):
+            if not started:
+                if path.name.startswith(start_from):
+                    started = True
+                else:
+                    continue
+
             print('Loading events:', path)
             with gzip.open(str(path), 'rt', errors='ignore') as file:
                 for line in file:
