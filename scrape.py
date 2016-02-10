@@ -188,10 +188,6 @@ class Scraper:
         self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
 
     def scrape(self, start_from):
-        self.scrape_locations(4)
-        self.scrape_genders(4)
-        return
-
         started = False
 
         for name, event in self.events.iterate(with_names=True):
