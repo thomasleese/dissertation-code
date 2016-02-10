@@ -194,10 +194,7 @@ class Events:
                     if func is not None:
                         record = func(record)
 
-                    if with_names:
-                        yield path.name, record
-                    else:
-                        yield record
+                    yield record
 
     def count(self):
         iterator = self.iterate(func=lambda event: event['type'])
