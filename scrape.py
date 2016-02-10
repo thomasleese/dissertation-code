@@ -132,98 +132,85 @@ class Genderize:
         return code, probability
 
 
-def print_status(user_id, *args):
-    print('>', '#{}'.format(user_id), *args)
-    sys.stdout.flush()
+class Scraper:
+    def __init__(self):
+        self.github = GitHub()
+        self.genderize = Genderize()
+        self.geography = Geography()
 
+        self.database = Database()
+        self.events = Events()
 
-def users():
-    github = GitHub()
-    database = Database()
-    events = Events()
+    def print_status(self, user_id, *args):
+        print('>', '#{}'.format(user_id), *args)
+        sys.stdout.flush()
 
-    for event in events.iterate():
-        try:
-            actor = event['actor']
-            user_id = actor['id']
-            user_login = actor['login']
-        except KeyError:
-            continue
+    def scrape_users(self):
+        for event in self.events.iterate():
+            try:
+                actor = event['actor']
+                user_id = actor['id']
+                user_login = actor['login']
+            except KeyError:
+                continue
 
-        if database.has_user(user_id):
-            continue
+            if self.database.has_user(user_id):
+                continue
 
-        github_user = github.get_user(user_login)
-        if 'id' not in github_user or user_id != github_user['id']:  # no longer a user
-            database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
-            print_status(user_id, ':(')
-            continue
+            github_user = self.github.get_user(user_login)
+            if 'id' not in github_user or user_id != github_user['id']:  # no longer a user
+                self.database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
+                self.print_status(user_id, ':(')
+                continue
 
-        fields = {
-            'id': github_user['id'],
-            'hireable': github_user['hireable']
-        }
+            fields = {
+                'id': github_user['id'],
+                'hireable': github_user['hireable']
+            }
 
-        for field in ['login', 'avatar_url', 'gravatar_id', 'name', 'company',
-                      'blog', 'location', 'email', 'bio']:
-            if github_user[field] is None:
-                fields[field] = None
-            else:
-                fields[field] = github_user[field].strip()
+            for field in ['login', 'avatar_url', 'gravatar_id', 'name', 'company',
+                          'blog', 'location', 'email', 'bio']:
+                if github_user[field] is None:
+                    fields[field] = None
+                else:
+                    fields[field] = github_user[field].strip()
 
-        database.insert_user(fields)
+            self.database.insert_user(fields)
 
-        print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
+            self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
 
-    database.close()
+    def scrape_locations(self):
+        for user_id, location_str in self.database.users_without_location:
+            location = self.geography.geocode(location_str)
+            if location is None:
+                continue
 
+            try:
+                country_code, country_name = self.geography.get_country(location)
+            except ValueError:
+                continue
 
-def user_followings():
-    github = GitHub()
+            self.print_status(user_id, location_str, '->', country_code,
+                              '({})'.format(country_name))
 
-    """for user in session.query(User):
-        for other_user in github.get_following_users(user.login):
-            print(other_user)"""
+            self.database.update_user_location(user_id, location.latitude,
+                                               location.longitude,
+                                               country_code)
 
+    def scrape_genders(self):
+        for user_id, name in self.database.users_without_gender:
+            gender, probability = self.genderize.guess(name.split()[0])
 
-def user_locations():
-    geography = Geography()
-    database = Database()
+            try:
+                probability_str = '({}%)'.format(probability * 100)
+            except TypeError:
+                probability_str = '(N/A)'
 
-    for user_id, location_str in database.users_without_location:
-        location = geography.geocode(location_str)
-        if location is None:
-            continue
+            self.print_status(user_id, name, '->', gender, probability_str)
 
-        try:
-            country_code, country_name = geography.get_country(location)
-        except ValueError:
-            continue
-
-        print_status(user_id, location_str, '->', country_code,
-                     '({})'.format(country_name))
-
-        database.update_user_location(user_id, location.latitude,
-                                      location.longitude, country_code)
-
-
-def user_genders():
-    genderize = Genderize()
-    database = Database()
-
-    for user_id, name in database.users_without_gender:
-        gender, probability = genderize.guess(name.split()[0])
-
-        try:
-            probability_str = '({}%)'.format(probability * 100)
-        except TypeError:
-            probability_str = '(N/A)'
-
-        print_status(user_id, name, '->', gender, probability_str)
-
-        database.update_user_gender(user_id, gender, probability)
+            self.database.update_user_gender(user_id, gender, probability)
 
 
 if __name__ == '__main__':
-    for name in sys.argv[1:]:
-        locals()[name]()
+    scraper = Scraper()
+    scraper.scrape_users()
