@@ -177,6 +177,7 @@ class Events:
                 if path.name.startswith(start_from):
                     started = True
                 else:
+                    print('Skipping events:', path)
                     continue
 
             print('Loading events:', path)
