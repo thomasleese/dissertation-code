@@ -98,6 +98,8 @@ class Geography:
             raise RateLimitError(int(time.time()) + (60 * 60))
         except geopy.exc.GeocoderTimedOut:
             raise RateLimitError(int(time.time()) + 10)
+        except geopy.exc.GeocoderServiceError:
+            raise RateLimitError(int(time.time()) + 10)
         else:
             time.sleep(0.1)  # to avoid rate limiting
             return result
