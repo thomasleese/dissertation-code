@@ -49,9 +49,10 @@ class Database:
             cursor.execute('SELECT id FROM users ORDER BY id DESC LIMIT 1')
             return cursor.fetchone()[0]
 
-    def has_user(self, user_id):
+    def has_user(self, user_login, user_id):
+        sql = 'SELECT COUNT(*) FROM users WHERE login = %s OR id = %s'
         with self.cursor() as cursor:
-            cursor.execute('SELECT COUNT(*) FROM users WHERE id = %s', (user_id,))
+            cursor.execute(sql, (user_login, user_id))
             return cursor.fetchone()[0] > 0
 
     def insert_user(self, fields):

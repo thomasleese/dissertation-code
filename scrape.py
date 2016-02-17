@@ -161,14 +161,17 @@ class Scraper:
             actor = event['actor']
             user_id = actor['id']
             user_login = actor['login']
+        except TypeError:
+            user_login = event['actor']
+            user_id = None
         except KeyError:
             return
 
-        if self.database.has_user(user_id):
+        if self.database.has_user(user_login, user_id):
             return
 
         github_user = self.github.get_user(user_login)
-        if 'id' not in github_user or user_id != github_user['id']:  # no longer a user
+        if user_id is not None and ('id' not in github_user or user_id != github_user['id']):  # no longer a user
             self.database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
             self.print_status(user_id, ':(')
             return
