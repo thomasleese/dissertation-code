@@ -4,6 +4,7 @@ import time
 import geopy.exc
 from geopy.geocoders import GoogleV3
 from joblib import Memory
+import pymysql
 import requests
 
 from dataset import Database, Events
@@ -188,9 +189,12 @@ class Scraper:
             else:
                 fields[field] = github_user[field].strip()
 
-        self.database.insert_user(fields)
-
-        self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
+        try:
+            self.database.insert_user(fields)
+        except pymysql.err.IntegrityError:
+            self.print_status(user_id, user_login, ':(')
+        else:
+            self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
 
     def scrape(self, start_from):
         for event in self.events.iterate(start_from=start_from):
