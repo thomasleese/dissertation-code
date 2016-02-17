@@ -172,9 +172,9 @@ class Scraper:
             return
 
         github_user = self.github.get_user(user_login)
-        if user_id is not None and ('id' not in github_user or user_id != github_user['id']):  # no longer a user
+        if 'id' not in github_user or (user_id is not None and user_id != github_user['id']):  # no longer a user
             self.database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
-            self.print_status(user_id, ':(')
+            self.print_status(user_id, user_login, ':(')
             return
 
         fields = {
@@ -192,6 +192,7 @@ class Scraper:
         try:
             self.database.insert_user(fields)
         except pymysql.err.IntegrityError:
+            self.database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
             self.print_status(user_id, user_login, ':(')
         else:
             self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
