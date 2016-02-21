@@ -134,6 +134,7 @@ class Database:
                 SELECT login, name
                 FROM users
                 WHERE name IS NOT NULL
+                    AND name != ''
                     AND (gender IS NULL OR gender != '?')
                     AND gender_probability IS NULL
             """)
