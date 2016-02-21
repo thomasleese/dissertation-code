@@ -114,31 +114,29 @@ class Database:
             for row in cursor:
                 yield row
 
-    def get_users_without_location(self, limit):
+    def get_users_without_location(self):
         with self.cursor() as cursor:
             cursor.execute("""
-                SELECT id, location
+                SELECT login, location
                 FROM users
                 WHERE location IS NOT NULL
                     AND location_country IS NULL
                     AND location_latitude IS NULL
                     AND location_longitude IS NULL
-                LIMIT %s
-            """, (limit,))
+            """)
 
             for row in cursor:
                 yield row
 
-    def get_users_without_gender(self, limit):
+    def get_users_without_gender(self):
         with self.cursor() as cursor:
             cursor.execute("""
-                SELECT id, name
+                SELECT login, name
                 FROM users
                 WHERE name IS NOT NULL
                     AND (gender IS NULL OR gender != '?')
                     AND gender_probability IS NULL
-                LIMIT %s
-            """, (limit,))
+            """)
 
             for row in cursor:
                 yield row
@@ -149,7 +147,7 @@ class Database:
             cursor.execute("""
                 UPDATE users
                 SET gender = %s, gender_probability = %s
-                WHERE id = %s
+                WHERE login = %s
             """, args)
 
             self.commit()
@@ -162,7 +160,7 @@ class Database:
                 SET location_country = %s,
                     location_latitude = %s,
                     location_longitude = %s
-                WHERE id = %s
+                WHERE login = %s
             """, args)
 
         self.commit()

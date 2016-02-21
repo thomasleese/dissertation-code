@@ -191,7 +191,7 @@ class Scraper:
 
             if 'id' not in github_user:
                 self.database.insert_user({'login': login, 'deleted': True})
-                self.print_status(user_id, user_login, ':(')
+                self.print_status(login, ':(')
                 return
 
         fields = {
@@ -209,24 +209,12 @@ class Scraper:
         self.database.insert_user(fields)
         #self.print_status(fields['login'], '✓')
 
-    def scrape(self, start_from):
+    def scrape_users(self, start_from):
         for event in self.events.iterate(start_from=start_from):
-            while True:
-                try:
-                    self.scrape_event(event)
-                    break
-                except RateLimitError as e:
-                    while not e.finished:
-                        try:
-                            self.scrape_locations(25)
-                            self.scrape_genders(25)
-                        except RateLimitError:
-                            break
+            self.scrape_event(event)
 
-                    e.wait()
-
-    def scrape_locations(self, n=100):
-        users = self.database.get_users_without_location(limit=n)
+    def scrape_locations(self):
+        users = self.database.get_users_without_location()
         for user_id, location_str in users:
             location = self.geography.geocode(location_str)
             if location is None:
@@ -249,8 +237,8 @@ class Scraper:
                                                location.longitude,
                                                country_code)
 
-    def scrape_genders(self, n=100):
-        users = self.database.get_users_without_gender(limit=n)
+    def scrape_genders(self):
+        users = self.database.get_users_without_gender()
         for user_id, name in users:
             gender, probability = self.genderize.guess(name.split()[0])
 
@@ -264,6 +252,20 @@ class Scraper:
             self.database.update_user_gender(user_id, gender, probability)
 
 
+def scrape(scraper):
+    if sys.argv[1] == 'users':
+        scraper.scrape_users(sys.argv[2])
+    elif sys.argv[1] == 'genders':
+        scraper.scrape_genders()
+    elif sys.argv[1] == 'locations':
+        scraper.scrape_locations()
+
+
 if __name__ == '__main__':
     scraper = Scraper()
-    scraper.scrape(sys.argv[1])
+
+    while True:
+        try:
+            scrape(scraper)
+        except RateLimitError as e:
+            e.wait()
