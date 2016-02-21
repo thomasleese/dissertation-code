@@ -56,12 +56,19 @@ class Database:
             return cursor.fetchone()[0] > 0
 
     def insert_user(self, fields):
+        for key in list(fields.keys()):
+            if fields[key] is None:
+                del fields[key]
+
+        keys = list(fields.keys())
+
         with self.cursor() as cursor:
-            fields_str = ', '.join(fields.keys())
+            fields_str = ', '.join(keys)
             values_str = ', '.join(['%s'] * len(fields))
-            sql = 'INSERT INTO users ({}) VALUES ({})' \
-                .format(fields_str, values_str)
-            cursor.execute(sql, tuple(fields.values()))
+            update_str = ', '.join('{} = %s'.format(k) for k in keys)
+            sql = 'INSERT INTO users ({}) VALUES ({}) ON DUPLICATE KEY UPDATE {}' \
+                .format(fields_str, values_str, update_str)
+            cursor.execute(sql, tuple(fields.values()) * 2)
 
         self.commit()
 

@@ -2,7 +2,7 @@ CREATE TABLE users (
     id INT(11) PRIMARY KEY NOT NULL,
     login VARCHAR(100),
     name VARCHAR(100),
-    company VARCHAR(100),
+    company VARCHAR(200),
     blog VARCHAR(200),
     location VARCHAR(100),
     location_country VARCHAR(3),
@@ -11,5 +11,6 @@ CREATE TABLE users (
     hireable TINYINT(1),
     bio TEXT,
     gender VARCHAR(1),
-    gender_probability DECIMAL(5,4)
+    gender_probability DECIMAL(5,4),
+    deleted BOOLEAN
 );

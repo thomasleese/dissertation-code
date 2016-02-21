@@ -1,5 +1,6 @@
 import sys
 import time
+import warnings
 
 import geopy.exc
 from geopy.geocoders import GoogleV3
@@ -10,6 +11,8 @@ import requests
 from dataset import Database, Events
 import settings
 
+
+warnings.filterwarnings('ignore', category=pymysql.Warning)
 
 memory = Memory('cache/scrape', verbose=0)
 
@@ -169,9 +172,6 @@ class Scraper:
         if actor is None:
             return
 
-        if self.database.has_user(login):
-            return
-
         if 'actor_attributes' in event:
             github_user = event['actor_attributes']
             github_user.setdefault('id', None)
@@ -182,16 +182,22 @@ class Scraper:
             github_user.setdefault('location', None)
             github_user.setdefault('bio', None)
         else:
-            github_user = self.github.get_user(loginds)
+            if self.database.has_user(login):
+                return
+
+            print('From GitHub:', login)
+
+            github_user = self.github.get_user(login)
 
             if 'id' not in github_user:
-                self.database.insert_user({'login': user_login, 'deleted': True})
+                self.database.insert_user({'login': login, 'deleted': True})
                 self.print_status(user_id, user_login, ':(')
                 return
 
         fields = {
             'id': github_user['id'],
-            'hireable': github_user['hireable']
+            'hireable': github_user['hireable'],
+            'deleted': False
         }
 
         for field in ['login', 'name', 'company', 'blog', 'location', 'bio']:
@@ -201,7 +207,7 @@ class Scraper:
                 fields[field] = github_user[field].strip()
 
         self.database.insert_user(fields)
-        self.print_status(fields['id'], fields['login'], '✓')
+        #self.print_status(fields['login'], '✓')
 
     def scrape(self, start_from):
         for event in self.events.iterate(start_from=start_from):
