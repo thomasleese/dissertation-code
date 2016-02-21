@@ -1,3 +1,3 @@
-users: python scrape.py users 2011
-genders: python scrape.py genders
-locations: python scrape.py locations
+users: venv/bin/python scrape.py users 2012-10-10
+genders: venv/bin/python scrape.py genders
+locations: venv/bin/python scrape.py locations
