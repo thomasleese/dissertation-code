@@ -1,5 +1,6 @@
 import gc
 import gzip
+import ijson
 import json
 from collections import Counter, OrderedDict
 from pathlib import Path
@@ -49,10 +50,10 @@ class Database:
             cursor.execute('SELECT id FROM users ORDER BY id DESC LIMIT 1')
             return cursor.fetchone()[0]
 
-    def has_user(self, user_login, user_id):
-        sql = 'SELECT COUNT(*) FROM users WHERE login = %s OR id = %s'
+    def has_user(self, user_login):
+        sql = 'SELECT COUNT(*) FROM users WHERE login = %s'
         with self.cursor() as cursor:
-            cursor.execute(sql, (user_login, user_id))
+            cursor.execute(sql, (user_login,))
             return cursor.fetchone()[0] > 0
 
     def insert_user(self, fields):

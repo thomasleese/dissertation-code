@@ -160,42 +160,48 @@ class Scraper:
     def scrape_event(self, event):
         try:
             actor = event['actor']
-            user_id = actor['id']
-            user_login = actor['login']
+            login = actor['login']
         except TypeError:
-            user_login = event['actor']
-            user_id = None
+            login = event['actor']
         except KeyError:
             return
 
-        if self.database.has_user(user_login, user_id):
+        if actor is None:
             return
 
-        github_user = self.github.get_user(user_login)
-        if 'id' not in github_user or (user_id is not None and user_id != github_user['id']):  # no longer a user
-            self.database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
-            self.print_status(user_id, user_login, ':(')
+        if self.database.has_user(login):
             return
+
+        if 'actor_attributes' in event:
+            github_user = event['actor_attributes']
+            github_user.setdefault('id', None)
+            github_user.setdefault('name', None)
+            github_user.setdefault('hireable', None)
+            github_user.setdefault('company', None)
+            github_user.setdefault('blog', None)
+            github_user.setdefault('location', None)
+            github_user.setdefault('bio', None)
+        else:
+            github_user = self.github.get_user(loginds)
+
+            if 'id' not in github_user:
+                self.database.insert_user({'login': user_login, 'deleted': True})
+                self.print_status(user_id, user_login, ':(')
+                return
 
         fields = {
             'id': github_user['id'],
             'hireable': github_user['hireable']
         }
 
-        for field in ['login', 'avatar_url', 'gravatar_id', 'name', 'company',
-                      'blog', 'location', 'email', 'bio']:
+        for field in ['login', 'name', 'company', 'blog', 'location', 'bio']:
             if github_user[field] is None:
                 fields[field] = None
             else:
                 fields[field] = github_user[field].strip()
 
-        try:
-            self.database.insert_user(fields)
-        except pymysql.err.IntegrityError:
-            self.database.insert_user({'id': user_id, 'login': user_login, 'deleted': True})
-            self.print_status(user_id, user_login, ':(')
-        else:
-            self.print_status(fields['id'], fields['login'], github_user['created_at'], '✓')
+        self.database.insert_user(fields)
+        self.print_status(fields['id'], fields['login'], '✓')
 
     def scrape(self, start_from):
         for event in self.events.iterate(start_from=start_from):
