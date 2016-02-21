@@ -200,7 +200,8 @@ class Scraper:
         fields = {
             'id': github_user['id'],
             'hireable': github_user['hireable'],
-            'deleted': False
+            'deleted': False,
+            'last_active': last_active
         }
 
         for field in ['login', 'name', 'company', 'blog', 'location', 'bio']:
