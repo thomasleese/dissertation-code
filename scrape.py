@@ -169,6 +169,8 @@ class Scraper:
         except KeyError:
             return
 
+        last_active = event['created_at']
+
         if actor is None:
             return
 
@@ -183,6 +185,7 @@ class Scraper:
             github_user.setdefault('bio', None)
         else:
             if self.database.has_user(login):
+                self.database.insert_user({'login': login, 'last_active': last_active})
                 return
 
             print('From GitHub:', login)
