@@ -1,6 +1,5 @@
 import gc
 import gzip
-import ijson
 import json
 from collections import Counter, OrderedDict
 from pathlib import Path
