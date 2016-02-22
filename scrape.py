@@ -172,7 +172,7 @@ class Scraper:
             except KeyError:
                 continue
 
-            if actor is None:
+            if login is None:
                 continue
 
             if 'actor_attributes' not in event:
@@ -220,7 +220,7 @@ class Scraper:
             except KeyError:
                 continue
 
-            if actor is None:
+            if login is None:
                 continue
 
             logins.add(login)
@@ -229,6 +229,31 @@ class Scraper:
                 self.database.insert_many_users(logins)
                 self.database.commit()
                 logins = set()
+
+    def scrape_user_activity(self, start_from):
+        i = 0
+
+        for event in self.events.iterate(start_from=start_from):
+            try:
+                actor = event['actor']
+                login = actor['login']
+            except TypeError:
+                login = event['actor']
+            except KeyError:
+                continue
+
+            if login is None:
+                continue
+
+            active_date = event['created_at']
+
+            self.database.update_user_activity(login, active_date)
+
+            i += 1
+
+            if i > 1000:
+                self.database.commit()
+                i = 0
 
     def scrape_locations(self):
         users = self.database.get_users_without_location()
@@ -274,6 +299,8 @@ def scrape(scraper):
         scraper.scrape_user_details(sys.argv[2])
     elif sys.argv[1] == 'user_logins':
         scraper.scrape_user_logins(sys.argv[2])
+    elif sys.argv[1] == 'user_activity':
+        scraper.scrape_user_activity(sys.argv[2])
     elif sys.argv[1] == 'genders':
         scraper.scrape_genders()
     elif sys.argv[1] == 'locations':

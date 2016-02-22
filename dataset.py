@@ -80,16 +80,16 @@ class Database:
             .format(update_str)
         self.cursor.execute(sql, keys + [login])
 
-    def update_user_first_active(self, login, first_active):
+    def update_user_activity(self, login, active_date):
         sql = """
             UPDATE users
             SET first_active = %s
-            WHERE login = %s AND (first_active IS NULL OR first_active > %s)
+            WHERE login = %s AND first_active IS NULL
         """
 
-        self.cursor.execute(sql, (first_active, login, first_active))
+        self.cursor.execute(sql, (login, active_date))
 
-        self.commit()
+        self.update_user(login, {'last_active': active_date})
 
     def get_company_distribution(self):
         self.cursor.execute("""
