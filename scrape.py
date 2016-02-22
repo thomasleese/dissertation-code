@@ -217,6 +217,20 @@ class Scraper:
         for event in self.events.iterate(start_from=start_from):
             self.scrape_event(event)
 
+    def scrape_users_first_active(self):
+        for event in self.events.iterate():
+            try:
+                actor = event['actor']
+                login = actor['login']
+            except TypeError:
+                login = event['actor']
+            except KeyError:
+                return
+
+            first_active = event['created_at']
+
+            self.database.update_user_first_active(login, first_active)
+
     def scrape_locations(self):
         users = self.database.get_users_without_location()
         for user_id, location_str in users:
@@ -263,6 +277,8 @@ def scrape(scraper):
         scraper.scrape_genders()
     elif sys.argv[1] == 'locations':
         scraper.scrape_locations()
+    elif sys.argv[1] == 'users_first_active':
+        scraper.scrape_users_first_active()
 
 
 if __name__ == '__main__':

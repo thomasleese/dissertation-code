@@ -3,6 +3,7 @@ import gzip
 import json
 from collections import Counter, OrderedDict
 from pathlib import Path
+import sys
 
 import pymysql
 from joblib import Memory
@@ -69,6 +70,16 @@ class Database:
             sql = 'INSERT INTO users ({}) VALUES ({}) ON DUPLICATE KEY UPDATE {}' \
                 .format(fields_str, values_str, update_str)
             cursor.execute(sql, tuple(fields.values()) * 2)
+
+        self.commit()
+
+    def update_user_first_active(self, login, first_active):
+        with self.cursor() as cursor:
+            cursor.execute("""
+                UPDATE users
+                SET first_active = %s
+                WHERE login = %s and first_active IS NOT NULL
+            """, (first_active, login))
 
         self.commit()
 
@@ -228,5 +239,15 @@ def count():
     db.close()
 
 
+def iterate_events():
+    events = Events()
+    for event in events.iterate():
+        print(event)
+        input()
+
+
 if __name__ == '__main__':
-    count()
+    if sys.argv[1] == 'count':
+        count()
+    elif sys.argv[1] == 'events':
+        iterate_events()
