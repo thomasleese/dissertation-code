@@ -143,40 +143,37 @@ class Database:
             yield row
 
     def get_users_without_gender(self):
-        with self.cursor() as cursor:
-            cursor.execute("""
-                SELECT login, name
-                FROM users
-                WHERE name IS NOT NULL
-                    AND name != ''
-                    AND (gender IS NULL OR gender != '?')
-                    AND gender_probability IS NULL
-            """)
+        self.cursor.execute("""
+            SELECT login, name
+            FROM users
+            WHERE name IS NOT NULL
+                AND name != ''
+                AND (gender IS NULL OR gender != '?')
+                AND gender_probability IS NULL
+        """)
 
-            for row in cursor:
-                yield row
+        for row in cursor:
+            yield row
 
     def update_user_gender(self, user_id, gender, probability):
-        with self.cursor() as cursor:
-            args = (gender, probability, user_id)
-            cursor.execute("""
-                UPDATE users
-                SET gender = %s, gender_probability = %s
-                WHERE login = %s
-            """, args)
+        args = (gender, probability, user_id)
+        self.cursor.execute("""
+            UPDATE users
+            SET gender = %s, gender_probability = %s
+            WHERE login = %s
+        """, args)
 
-            self.commit()
+        self.commit()
 
     def update_user_location(self, user_id, latitude, longitude, country_code):
-        with self.cursor() as cursor:
-            args = (country_code, latitude, longitude, user_id)
-            cursor.execute("""
-                UPDATE users
-                SET location_country = %s,
-                    location_latitude = %s,
-                    location_longitude = %s
-                WHERE login = %s
-            """, args)
+        args = (country_code, latitude, longitude, user_id)
+        self.cursor.execute("""
+            UPDATE users
+            SET location_country = %s,
+                location_latitude = %s,
+                location_longitude = %s
+            WHERE login = %s
+        """, args)
 
         self.commit()
 
