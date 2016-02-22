@@ -72,13 +72,14 @@ class Database:
                 del fields[key]
 
         keys = list(fields.keys())
+        values = list(fields.values())
 
         fields_str = ', '.join(keys)
         values_str = ', '.join(['%s'] * len(fields))
         update_str = ', '.join('{} = %s'.format(k) for k in keys)
         sql = 'UPDATE users SET {} WHERE login = %s' \
             .format(update_str)
-        self.cursor.execute(sql, keys + [login])
+        self.cursor.execute(sql, values + [login])
 
     def update_user_activity(self, login, active_date):
         sql = """
