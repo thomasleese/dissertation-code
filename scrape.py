@@ -218,6 +218,8 @@ class Scraper:
             self.scrape_event(event)
 
     def scrape_users_first_active(self):
+        print('Scraping first time a user was active.')
+
         for event in self.events.iterate():
             try:
                 actor = event['actor']
@@ -225,7 +227,7 @@ class Scraper:
             except TypeError:
                 login = event['actor']
             except KeyError:
-                return
+                continue
 
             first_active = event['created_at']
 

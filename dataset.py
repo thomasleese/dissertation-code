@@ -75,11 +75,13 @@ class Database:
 
     def update_user_first_active(self, login, first_active):
         with self.cursor() as cursor:
-            cursor.execute("""
+            sql = """
                 UPDATE users
                 SET first_active = %s
-                WHERE login = %s and first_active > %s
-            """, (first_active, login, first_active))
+                WHERE login = %s AND (first_active IS NULL OR first_active > %s)
+            """
+
+            cursor.execute(sql, (first_active, login, first_active))
 
         self.commit()
 
