@@ -191,7 +191,6 @@ class Scraper:
                 'id': github_user['id'],
                 'hireable': github_user['hireable'],
                 'deleted': False,
-                'last_active': last_active
             }
 
             for field in ['name', 'company', 'blog', 'location', 'bio']:
@@ -207,6 +206,8 @@ class Scraper:
             if i > 100:
                 self.database.commit()
                 i = 0
+
+        self.database.commit()
 
     def scrape_user_logins(self, start_from):
         logins = set()
@@ -229,6 +230,9 @@ class Scraper:
                 self.database.insert_many_users(logins)
                 self.database.commit()
                 logins = set()
+
+        self.database.insert_many_users(logins)
+        self.database.commit()
 
     def scrape_user_activity(self, start_from):
         i = 0
@@ -254,6 +258,32 @@ class Scraper:
             if i > 1000:
                 self.database.commit()
                 i = 0
+
+        self.database.commit()
+
+    def scrape_user_events(self, start_from):
+        i = 0
+
+        for event in self.events.iterate(start_from=start_from):
+            try:
+                actor = event['actor']
+                login = actor['login']
+            except TypeError:
+                login = event['actor']
+            except KeyError:
+                continue
+
+            if login is None:
+                continue
+
+            self.database.add_user_event(login, event['type'])
+
+            i += 1
+            if i >= 5000:
+                self.database.commit()
+                i = 0
+
+        self.database.commit()
 
     def scrape_locations(self):
         users = self.database.get_users_without_location()
