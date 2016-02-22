@@ -178,8 +178,12 @@ class Database:
         self.commit()
 
     def add_user_event(self, login, event):
-        sql = 'UPDATE users SET count_{} = count_{} + 1'.format(event)
-        self.cursor.execute(sql)
+        sql = """
+            UPDATE users
+            SET count_{0} = count_{0} + 1
+            WHERE login = %s
+        """.format(event)
+        self.cursor.execute(sql, (login,))
 
 
 class Events:
