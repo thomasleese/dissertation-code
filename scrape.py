@@ -225,7 +225,7 @@ class Scraper:
 
             logins.add(login)
 
-            if len(logins) >= 10000:
+            if len(logins) >= 100000:
                 self.database.insert_many_users(logins)
                 self.database.commit()
                 logins = set()
