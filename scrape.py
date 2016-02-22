@@ -331,10 +331,14 @@ def scrape(scraper):
         scraper.scrape_user_logins(sys.argv[2])
     elif sys.argv[1] == 'user_activity':
         scraper.scrape_user_activity(sys.argv[2])
+    elif sys.argv[1] == 'user_events':
+        scraper.scrape_user_events(sys.argv[2])
     elif sys.argv[1] == 'genders':
         scraper.scrape_genders()
     elif sys.argv[1] == 'locations':
         scraper.scrape_locations()
+    else:
+        raise RuntimeError(sys.argv[1])
 
 
 if __name__ == '__main__':
