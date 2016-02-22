@@ -152,7 +152,7 @@ class Database:
                 AND gender_probability IS NULL
         """)
 
-        for row in cursor:
+        for row in self.cursor:
             yield row
 
     def update_user_gender(self, user_id, gender, probability):
