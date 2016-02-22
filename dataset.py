@@ -62,6 +62,10 @@ class Database:
         sql = 'INSERT IGNORE INTO users (login) VALUES (%s)'
         self.cursor.execute(sql, (login,))
 
+    def insert_many_users(self, logins):
+        sql = 'INSERT IGNORE INTO users (login) VALUES (%s)'
+        self.cursor.executemany(sql, [(v,) for v in logins])
+
     def update_user(self, login, fields):
         for key in list(fields.keys()):
             if fields[key] is None:

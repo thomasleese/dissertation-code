@@ -209,7 +209,7 @@ class Scraper:
                 i = 0
 
     def scrape_user_logins(self, start_from):
-        i = 0
+        logins = set()
 
         for event in self.events.iterate(start_from=start_from):
             try:
@@ -223,13 +223,12 @@ class Scraper:
             if actor is None:
                 continue
 
-            self.database.insert_user(login)
+            logins.add(login)
 
-            i += 1
-
-            if i > 100:
+            if len(logins) >= 10000:
+                self.database.insert_many_users(logins)
                 self.database.commit()
-                i = 0
+                logins = set()
 
     def scrape_locations(self):
         users = self.database.get_users_without_location()
