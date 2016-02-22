@@ -21,125 +21,122 @@ class Database:
                                           db=settings.DB_NAME,
                                           charset='utf8')
 
+    @property
     def cursor(self):
-        return self.connection.cursor()
+        try:
+            return self._cursor
+        except AttributeError:
+            self._cursor = self.connection.cursor()
+            return self._cursor
 
     def commit(self):
         self.connection.commit()
+        self._cursor.close()
+        del self._cursor
 
     def close(self):
         self.connection.close()
 
     def count(self):
         counter = Counter()
-        with self.cursor() as cursor:
-            cursor.execute('SELECT COUNT(id) FROM users')
-            counter['users'] = cursor.fetchone()[0]
 
-            cursor.execute('SELECT COUNT(DISTINCT company) FROM users')
-            counter['companies'] = cursor.fetchone()[0]
+        self.cursor.execute('SELECT COUNT(id) FROM users')
+        counter['users'] = self.cursor.fetchone()[0]
 
-            cursor.execute('SELECT COUNT(DISTINCT location_country) FROM users')
-            counter['countries'] = cursor.fetchone()[0]
+        self.cursor.execute('SELECT COUNT(DISTINCT company) FROM users')
+        counter['companies'] = self.cursor.fetchone()[0]
+
+        self.cursor.execute('SELECT COUNT(DISTINCT location_country) FROM users')
+        counter['countries'] = self.cursor.fetchone()[0]
+
+        self.commit()
 
         return counter
 
-    @property
-    def last_user_id(self):
-        with self.cursor() as cursor:
-            cursor.execute('SELECT id FROM users ORDER BY id DESC LIMIT 1')
-            return cursor.fetchone()[0]
-
     def has_user(self, user_login):
         sql = 'SELECT COUNT(*) FROM users WHERE login = %s'
-        with self.cursor() as cursor:
-            cursor.execute(sql, (user_login,))
-            return cursor.fetchone()[0] > 0
+        self.cursor.execute(sql, (user_login,))
+        return self.cursor.fetchone()[0] > 0
 
-    def insert_user(self, fields):
+    def insert_user(self, login):
+        sql = 'INSERT IGNORE INTO users (login) VALUES (%s)'
+        self.cursor.execute(sql, (login,))
+
+    def update_user(self, login, fields):
         for key in list(fields.keys()):
             if fields[key] is None:
                 del fields[key]
 
         keys = list(fields.keys())
 
-        with self.cursor() as cursor:
-            fields_str = ', '.join(keys)
-            values_str = ', '.join(['%s'] * len(fields))
-            update_str = ', '.join('{} = %s'.format(k) for k in keys)
-            sql = 'INSERT INTO users ({}) VALUES ({}) ON DUPLICATE KEY UPDATE {}' \
-                .format(fields_str, values_str, update_str)
-            cursor.execute(sql, tuple(fields.values()) * 2)
-
-        self.commit()
+        fields_str = ', '.join(keys)
+        values_str = ', '.join(['%s'] * len(fields))
+        update_str = ', '.join('{} = %s'.format(k) for k in keys)
+        sql = 'UPDATE users SET {} WHERE login = %s' \
+            .format(update_str)
+        self.cursor.execute(sql, keys + [login])
 
     def update_user_first_active(self, login, first_active):
-        with self.cursor() as cursor:
-            sql = """
-                UPDATE users
-                SET first_active = %s
-                WHERE login = %s AND (first_active IS NULL OR first_active > %s)
-            """
+        sql = """
+            UPDATE users
+            SET first_active = %s
+            WHERE login = %s AND (first_active IS NULL OR first_active > %s)
+        """
 
-            cursor.execute(sql, (first_active, login, first_active))
+        self.cursor.execute(sql, (first_active, login, first_active))
 
         self.commit()
 
     def get_company_distribution(self):
-        with self.cursor() as cursor:
-            cursor.execute("""
-                SELECT company, COUNT(*)
-                FROM users
-                WHERE company IS NOT NULL
-                GROUP BY company
-            """)
-            return OrderedDict(cursor)
+        self.cursor.execute("""
+            SELECT company, COUNT(*)
+            FROM users
+            WHERE company IS NOT NULL
+            GROUP BY company
+        """)
+        return OrderedDict(cself.ursor)
 
     def get_country_distribution(self):
-        with self.cursor() as cursor:
-            cursor.execute("""
-                SELECT location_country, COUNT(id)
-                FROM users
-                WHERE location_country IS NOT NULL
-                GROUP BY location_country
-            """)
-            return OrderedDict(cursor)
+        self.cursor.execute("""
+            SELECT location_country, COUNT(id)
+            FROM users
+            WHERE location_country IS NOT NULL
+            GROUP BY location_country
+        """)
+        return OrderedDict(self.cursor)
 
     def get_gender_distribution(self):
-        with self.cursor() as cursor:
-            cursor.execute("""
-                SELECT gender, COUNT(id)
-                FROM users
-                WHERE gender IS NOT NULL
-                GROUP BY gender
-            """)
-            return OrderedDict(cursor)
+        self.cursor.execute("""
+            SELECT gender, COUNT(id)
+            FROM users
+            WHERE gender IS NOT NULL
+            GROUP BY gender
+        """)
+        return OrderedDict(self.cursor)
 
     def get_location_points(self):
-        with self.cursor() as cursor:
-            cursor.execute("""
-                SELECT location_latitude, location_longitude
-                FROM users
-                WHERE location_latitude IS NOT NULL
-                    AND location_longitude IS NOT NULL
-            """)
+        self.cursor.execute("""
+            SELECT location_latitude, location_longitude
+            FROM users
+            WHERE location_latitude IS NOT NULL
+                AND location_longitude IS NOT NULL
+        """)
 
-            for row in cursor:
-                yield row
+        for row in self.cursor:
+            yield row
 
     def get_users_without_location(self):
-        with self.cursor() as cursor:
-            cursor.execute("""
-                SELECT login, location
-                FROM users
-                WHERE location IS NOT NULL
-                    AND location_country IS NULL
-                    AND location_latitude IS NULL
-                    AND location_longitude IS NULL
-            """)
+        self.cursor.execute("""
+            SELECT login, location
+            FROM users
+            WHERE location IS NOT NULL
+                AND location_country IS NULL
+                AND location_latitude IS NULL
+                AND location_longitude IS NULL
+        """)
 
-            for row in cursor:
-                yield row
+        for row in self.cursor:
+            yield row
 
     def get_users_without_gender(self):
         with self.cursor() as cursor:

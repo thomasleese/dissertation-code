@@ -160,23 +160,24 @@ class Scraper:
         print('>', '#{}'.format(user_id), *args)
         sys.stdout.flush()
 
-    def scrape_event(self, event):
-        try:
-            actor = event['actor']
-            login = actor['login']
-        except TypeError:
-            login = event['actor']
-        except KeyError:
-            return
+    def scrape_user_details(self, start_from):
+        i = 0
 
-        last_active = event['created_at']
+        for event in self.events.iterate(start_from=start_from):
+            try:
+                actor = event['actor']
+                login = actor['login']
+            except TypeError:
+                login = event['actor']
+            except KeyError:
+                continue
 
-        self.database.update_user_first_active(login, last_active)
+            if actor is None:
+                continue
 
-        if actor is None:
-            return
+            if 'actor_attributes' not in event:
+                continue
 
-        if 'actor_attributes' in event:
             github_user = event['actor_attributes']
             github_user.setdefault('id', None)
             github_user.setdefault('name', None)
@@ -185,39 +186,50 @@ class Scraper:
             github_user.setdefault('blog', None)
             github_user.setdefault('location', None)
             github_user.setdefault('bio', None)
-        else:
-            if self.database.has_user(login):
-                self.database.insert_user({'login': login, 'last_active': last_active})
-                return
 
-            print('From GitHub:', login)
+            fields = {
+                'id': github_user['id'],
+                'hireable': github_user['hireable'],
+                'deleted': False,
+                'last_active': last_active
+            }
 
-            github_user = self.github.get_user(login)
+            for field in ['name', 'company', 'blog', 'location', 'bio']:
+                if github_user[field] is None:
+                    fields[field] = None
+                else:
+                    fields[field] = github_user[field].strip()
 
-            if 'id' not in github_user:
-                self.database.insert_user({'login': login, 'deleted': True})
-                self.print_status(login, ':(')
-                return
+            self.database.update_user(login, fields)
 
-        fields = {
-            'id': github_user['id'],
-            'hireable': github_user['hireable'],
-            'deleted': False,
-            'last_active': last_active
-        }
+            i += 1
 
-        for field in ['login', 'name', 'company', 'blog', 'location', 'bio']:
-            if github_user[field] is None:
-                fields[field] = None
-            else:
-                fields[field] = github_user[field].strip()
+            if i > 100:
+                self.database.commit()
+                i = 0
 
-        self.database.insert_user(fields)
-        #self.print_status(fields['login'], '✓')
+    def scrape_user_logins(self, start_from):
+        i = 0
 
-    def scrape_users(self, start_from):
         for event in self.events.iterate(start_from=start_from):
-            self.scrape_event(event)
+            try:
+                actor = event['actor']
+                login = actor['login']
+            except TypeError:
+                login = event['actor']
+            except KeyError:
+                continue
+
+            if actor is None:
+                continue
+
+            self.database.insert_user(login)
+
+            i += 1
+
+            if i > 100:
+                self.database.commit()
+                i = 0
 
     def scrape_locations(self):
         users = self.database.get_users_without_location()
@@ -259,8 +271,10 @@ class Scraper:
 
 
 def scrape(scraper):
-    if sys.argv[1] == 'users':
-        scraper.scrape_users(sys.argv[2])
+    if sys.argv[1] == 'user_details':
+        scraper.scrape_user_details(sys.argv[2])
+    elif sys.argv[1] == 'user_logins':
+        scraper.scrape_user_logins(sys.argv[2])
     elif sys.argv[1] == 'genders':
         scraper.scrape_genders()
     elif sys.argv[1] == 'locations':
