@@ -78,8 +78,8 @@ class Database:
             cursor.execute("""
                 UPDATE users
                 SET first_active = %s
-                WHERE login = %s and first_active IS NOT NULL
-            """, (first_active, login))
+                WHERE login = %s and first_active > %s
+            """, (first_active, login, first_active))
 
         self.commit()
 
