@@ -88,7 +88,7 @@ class Database:
             WHERE login = %s AND first_active IS NULL
         """
 
-        self.cursor.execute(sql, (login, active_date))
+        self.cursor.execute(sql, (active_date, login))
 
         self.update_user(login, {'last_active': active_date})
 
