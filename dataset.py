@@ -81,16 +81,21 @@ class Database:
             .format(update_str)
         self.cursor.execute(sql, values + [login])
 
-    def update_user_activity(self, login, active_date):
-        sql = """
+    def update_user_activity(self, first_active, last_active):
+        sql1 = """
             UPDATE users
             SET first_active = %s
             WHERE login = %s AND first_active IS NULL
         """
 
-        self.cursor.execute(sql, (active_date, login))
+        sql2 = """
+            UPDATE users
+            SET last_active = %s
+            WHERE login = %s
+        """
 
-        self.update_user(login, {'last_active': active_date})
+        self.cursor.executemany(sql1, [(v, k) for k, v in first_active.items()])
+        self.cursor.executemany(sql2, [(v, k) for k, v in last_active.items()])
 
     def get_company_distribution(self):
         self.cursor.execute("""

@@ -235,7 +235,8 @@ class Scraper:
         self.database.commit()
 
     def scrape_user_activity(self, start_from):
-        i = 0
+        first_active = {}
+        last_active = {}
 
         for event in self.events.iterate(start_from=start_from):
             try:
@@ -251,14 +252,17 @@ class Scraper:
 
             active_date = event['created_at']
 
-            self.database.update_user_activity(login, active_date)
+            if login not in first_active:
+                first_active[login] = active_date
+            last_active[login] = active_date
 
-            i += 1
-
-            if i > 1000:
+            if len(first_active) >= 10000 or len(last_active) >= 10000:
+                self.database.update_user_activity(first_active, last_active)
                 self.database.commit()
-                i = 0
+                first_active = {}
+                last_active = {}
 
+        self.database.update_user_activity(first_active, last_active)
         self.database.commit()
 
     def scrape_user_events(self, start_from):
