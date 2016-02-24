@@ -256,7 +256,7 @@ class Scraper:
                 first_active[login] = active_date
             last_active[login] = active_date
 
-            if len(first_active) >= 10000 or len(last_active) >= 10000:
+            if len(first_active) >= 100000 or len(last_active) >= 100000:
                 self.database.update_user_activity(first_active, last_active)
                 self.database.commit()
                 first_active = {}
