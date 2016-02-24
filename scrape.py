@@ -258,12 +258,10 @@ class Scraper:
 
             if len(first_active) >= 100000 or len(last_active) >= 100000:
                 self.database.update_user_activity(first_active, last_active)
-                self.database.commit()
                 first_active = {}
                 last_active = {}
 
         self.database.update_user_activity(first_active, last_active)
-        self.database.commit()
 
     def scrape_user_events(self, start_from):
         i = 0

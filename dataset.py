@@ -94,8 +94,18 @@ class Database:
             WHERE login = %s
         """
 
-        self.cursor.executemany(sql1, [(v, k) for k, v in first_active.items()])
-        self.cursor.executemany(sql2, [(v, k) for k, v in last_active.items()])
+        print('Updating first active...')
+
+        args = [(v, k) for k, v in first_active.items()]
+        self.cursor.executemany(sql1, args)
+
+        print('Updating last active...')
+
+        args = [(v, k) for k, v in last_active.items()]
+        self.cursor.executemany(sql2, args)
+
+        print('Committing...')
+        self.commit()
 
     def get_company_distribution(self):
         self.cursor.execute("""
