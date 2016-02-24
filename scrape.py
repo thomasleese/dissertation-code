@@ -234,11 +234,11 @@ class Scraper:
         self.database.insert_many_users(logins)
         self.database.commit()
 
-    def scrape_user_activity(self, start_from):
+    def scrape_user_activity(self):
         first_active = {}
         last_active = {}
 
-        for event in self.events.iterate(start_from=start_from):
+        for event in self.events.iterate():
             try:
                 actor = event['actor']
                 login = actor['login']
@@ -256,12 +256,16 @@ class Scraper:
                 first_active[login] = active_date
             last_active[login] = active_date
 
-            if len(last_active) >= 50000:
-                self.database.update_user_activity(first_active, last_active)
-                first_active = {}
-                last_active = {}
+        length = len(first_active)
+        for i, (login, first) in enumerate(first_active.items()):
+            last = last_active[login]
+            self.database.update_user_activity(login, first, last)
+            print(login, i, length)
 
-        self.database.update_user_activity(first_active, last_active)
+            if i % 100 == 0:
+                self.database.commit()
+
+        self.database.commit()
 
     def scrape_user_events(self, start_from):
         i = 0
@@ -333,7 +337,7 @@ def scrape(scraper):
     elif sys.argv[1] == 'user_logins':
         scraper.scrape_user_logins(sys.argv[2])
     elif sys.argv[1] == 'user_activity':
-        scraper.scrape_user_activity(sys.argv[2])
+        scraper.scrape_user_activity()
     elif sys.argv[1] == 'user_events':
         scraper.scrape_user_events(sys.argv[2])
     elif sys.argv[1] == 'genders':

@@ -81,31 +81,15 @@ class Database:
             .format(update_str)
         self.cursor.execute(sql, values + [login])
 
-    def update_user_activity(self, first_active, last_active):
-        sql1 = """
+    def update_user_activity(self, login, first_active, last_active):
+        sql = """
             UPDATE users
             SET first_active = %s
-            WHERE login = %s AND first_active IS NULL
-        """
-
-        sql2 = """
-            UPDATE users
             SET last_active = %s
             WHERE login = %s
         """
 
-        print('Updating first active...')
-
-        args = [(v, k) for k, v in first_active.items()]
-        self.cursor.executemany(sql1, args)
-
-        print('Updating last active...')
-
-        args = [(v, k) for k, v in last_active.items()]
-        self.cursor.executemany(sql2, args)
-
-        print('Committing...')
-        self.commit()
+        self.cursor.execute(sql, (first_active, last_active, login))
 
     def get_company_distribution(self):
         self.cursor.execute("""
