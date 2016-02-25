@@ -313,8 +313,10 @@ class Scraper:
                                                country_code)
 
     def scrape_genders(self):
+        genders = {}
+
         users = self.database.get_users_without_gender()
-        for user_id, name in users:
+        for login, name in users:
             gender, probability = self.genderize.guess(name.split()[0])
 
             try:
@@ -324,7 +326,13 @@ class Scraper:
 
             self.print_status(user_id, name, '->', gender, probability_str)
 
-            self.database.update_user_gender(user_id, gender, probability)
+            genders[login] = (gender, probability)
+
+            if len(genders) >= 1000:
+                self.database.update_user_gender(genders)
+                genders = {}
+
+        self.database.update_user_gender(genders)
 
 
 def scrape(scraper):

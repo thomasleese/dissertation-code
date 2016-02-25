@@ -171,13 +171,16 @@ class Database:
         for row in self.cursor:
             yield row
 
-    def update_user_gender(self, user_id, gender, probability):
-        args = (gender, probability, user_id)
-        self.cursor.execute("""
+    def update_user_gender(self, genders):
+        sql = """
             UPDATE users
             SET gender = %s, gender_probability = %s
             WHERE login = %s
-        """, args)
+        """
+
+        args = [(v[0], v[1], k) for k, v in genders.items()]
+
+        self.cursor.executemany(sql, args)
 
         self.commit()
 
