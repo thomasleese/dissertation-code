@@ -156,9 +156,8 @@ class Scraper:
         self.database = Database()
         self.events = Events()
 
-    def print_status(self, user_id, *args):
-        print('>', '#{}'.format(user_id), *args)
-        sys.stdout.flush()
+    def print_status(self, login, *args):
+        print('>', '@{}'.format(login), *args)
 
     def scrape_user_details(self, start_from):
         i = 0
@@ -324,7 +323,7 @@ class Scraper:
             except TypeError:
                 probability_str = '(N/A)'
 
-            self.print_status(user_id, name, '->', gender, probability_str)
+            self.print_status(login, name, '->', gender, probability_str)
 
             genders[login] = (gender, probability)
 
