@@ -156,9 +156,6 @@ class Scraper:
         self.database = Database()
         self.events = Events()
 
-    def print_status(self, login, *args):
-        print('>', '@{}'.format(login), *args)
-
     def scrape_user_details(self, start_from):
         i = 0
 
@@ -296,7 +293,7 @@ class Scraper:
         for i, (login, location_str) in enumerate(users):
             location = self.geography.geocode(location_str)
             if location is None:
-                self.print_status(login, location_str, '->', '?')
+                print(login, location_str, '->', '?')
                 locations[login] = (None, None, '?')
                 continue
 
@@ -304,14 +301,14 @@ class Scraper:
                 country_code, country_name = \
                     self.geography.get_country(location)
             except ValueError:
-                self.print_status(login, location_str, '->', '?')
+                print(login, location_str, '->', '?')
                 locations[login] = (None, None, '?')
                 continue
 
-            progress = '\t{}%'.format(round((i / len_users) * 100))
+            progress = '{:<8}%'.format(round((i / len_users) * 100, 2))
 
-            self.print_status(login, location_str, '->', country_code,
-                              '({})'.format(country_name), progress)
+            print(progress, location_str, '->', country_code,
+                  '({})'.format(country_name))
 
             locations[login] = (location.latitude, location.longitude,
                                 country_code)
@@ -338,9 +335,9 @@ class Scraper:
             except TypeError:
                 probability_str = '(N/A)'
 
-            progress = '\t{}%'.format(round((i / len_users) * 100))
+            progress = '{:<8}%'.format(round((i / len_users) * 100, 2))
 
-            self.print_status(login, name, '->', gender, probability_str, progress)
+            print(progress, name, '->', gender, probability_str)
 
             genders[login] = (gender, probability)
 
