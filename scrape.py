@@ -364,5 +364,6 @@ if __name__ == '__main__':
     while True:
         try:
             scrape(scraper)
+            break
         except RateLimitError as e:
             e.wait()
