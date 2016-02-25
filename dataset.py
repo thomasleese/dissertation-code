@@ -159,8 +159,7 @@ class Database:
                 AND location_longitude IS NULL
         """)
 
-        for row in self.cursor:
-            yield row
+        return self.cursor.fetchall()
 
     def get_users_without_gender(self):
         self.cursor.execute("""
@@ -172,8 +171,7 @@ class Database:
                 AND gender_probability IS NULL
         """)
 
-        for row in self.cursor:
-            yield row
+        return self.cursor.fetchall()
 
     def update_user_gender(self, genders):
         sql = """
