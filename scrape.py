@@ -288,28 +288,35 @@ class Scraper:
         self.database.commit()
 
     def scrape_locations(self):
+        locations = {}
+
         users = self.database.get_users_without_location()
-        for user_id, location_str in users:
+        for login, location_str in users:
             location = self.geography.geocode(location_str)
             if location is None:
-                self.print_status(user_id, location_str, '->', '?')
-                self.database.update_user_location(user_id, None, None, '?')
+                self.print_status(login, location_str, '->', '?')
+                locations[login] = (None, None, '?')
                 continue
 
             try:
                 country_code, country_name = \
                     self.geography.get_country(location)
             except ValueError:
-                self.print_status(user_id, location_str, '->', '?')
-                self.database.update_user_location(user_id, None, None, '?')
+                self.print_status(login, location_str, '->', '?')
+                locations[login] = (None, None, '?')
                 continue
 
-            self.print_status(user_id, location_str, '->', country_code,
+            self.print_status(login, location_str, '->', country_code,
                               '({})'.format(country_name))
 
-            self.database.update_user_location(user_id, location.latitude,
-                                               location.longitude,
-                                               country_code)
+            locations[login] = (location.latitude, location.longitude,
+                                country_code)
+
+            if len(locations) > 1000:
+                self.database.update_user_location(locations)
+                locations = {}
+
+        self.database.update_user_location(locations)
 
     def scrape_genders(self):
         genders = {}

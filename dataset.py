@@ -184,15 +184,18 @@ class Database:
 
         self.commit()
 
-    def update_user_location(self, user_id, latitude, longitude, country_code):
-        args = (country_code, latitude, longitude, user_id)
-        self.cursor.execute("""
+    def update_user_location(self, locations):
+        sql = """
             UPDATE users
             SET location_country = %s,
                 location_latitude = %s,
                 location_longitude = %s
             WHERE login = %s
-        """, args)
+        """
+
+        args = [(v[2], v[0], v[1], k) for k, v in locations.items()]
+
+        self.cursor.executemany(sql, args)
 
         self.commit()
 
