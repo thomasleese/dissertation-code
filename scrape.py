@@ -324,7 +324,7 @@ class Scraper:
         genders = {}
 
         users = self.database.get_users_without_gender()
-        for login, name in users:
+        for i, (login, name) in enumerate(users):
             gender, probability = self.genderize.guess(name.split()[0])
 
             try:
@@ -332,7 +332,7 @@ class Scraper:
             except TypeError:
                 probability_str = '(N/A)'
 
-            self.print_status(login, name, '->', gender, probability_str)
+            self.print_status(i, login, name, '->', gender, probability_str)
 
             genders[login] = (gender, probability)
 

@@ -37,11 +37,15 @@ class Database:
     def close(self):
         self.connection.close()
 
+    @property
+    def count_users(self):
+        self.cursor.execute('SELECT COUNT(*) FROM users')
+        counter['users'] = self.cursor.fetchone()[0]
+
     def count(self):
         counter = Counter()
 
-        self.cursor.execute('SELECT COUNT(id) FROM users')
-        counter['users'] = self.cursor.fetchone()[0]
+        counter['users'] = self.count_users
 
         self.cursor.execute('SELECT COUNT(DISTINCT company) FROM users')
         counter['companies'] = self.cursor.fetchone()[0]
