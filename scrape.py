@@ -318,6 +318,8 @@ class Scraper:
 
         self.database.update_user_location(locations)
 
+        print('Finished.')
+
     def scrape_genders(self):
         genders = {}
 
@@ -340,8 +342,12 @@ class Scraper:
 
         self.database.update_user_gender(genders)
 
+        print('Finished.')
+
 
 def scrape(scraper):
+    print('Running scraper...')
+
     if sys.argv[1] == 'user_details':
         scraper.scrape_user_details(sys.argv[2])
     elif sys.argv[1] == 'user_logins':
@@ -357,6 +363,8 @@ def scrape(scraper):
     else:
         raise RuntimeError(sys.argv[1])
 
+    print('Scraper claims to have finished successfully.')
+
 
 if __name__ == '__main__':
     scraper = Scraper()
@@ -367,6 +375,7 @@ if __name__ == '__main__':
         try:
             scrape(scraper)
         except RateLimitError as e:
+            print('Rate limit error!')
             e.wait()
         else:
             finished = True
