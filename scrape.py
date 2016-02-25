@@ -291,7 +291,9 @@ class Scraper:
         locations = {}
 
         users = self.database.get_users_without_location()
-        for login, location_str in users:
+        len_users = len(users)
+
+        for i, (login, location_str) in enumerate(users):
             location = self.geography.geocode(location_str)
             if location is None:
                 self.print_status(login, location_str, '->', '?')
@@ -306,8 +308,10 @@ class Scraper:
                 locations[login] = (None, None, '?')
                 continue
 
+            progress = '\t{}%'.format(round((i / len_users) * 100))
+
             self.print_status(login, location_str, '->', country_code,
-                              '({})'.format(country_name))
+                              '({})'.format(country_name), progress)
 
             locations[login] = (location.latitude, location.longitude,
                                 country_code)
@@ -324,6 +328,8 @@ class Scraper:
         genders = {}
 
         users = self.database.get_users_without_gender()
+        len_users = len(users)
+
         for i, (login, name) in enumerate(users):
             gender, probability = self.genderize.guess(name.split()[0])
 
@@ -332,7 +338,9 @@ class Scraper:
             except TypeError:
                 probability_str = '(N/A)'
 
-            self.print_status(i, login, name, '->', gender, probability_str)
+            progress = '\t{}%'.format(round((i / len_users) * 100))
+
+            self.print_status(login, name, '->', gender, probability_str, progress)
 
             genders[login] = (gender, probability)
 
