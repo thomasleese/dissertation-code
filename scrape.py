@@ -361,9 +361,12 @@ def scrape(scraper):
 if __name__ == '__main__':
     scraper = Scraper()
 
-    while True:
+    finished = False
+
+    while not finished:
         try:
             scrape(scraper)
-            break
         except RateLimitError as e:
             e.wait()
+        else:
+            finished = True
