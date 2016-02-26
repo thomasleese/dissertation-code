@@ -274,7 +274,6 @@ class Scraper:
             if login is None:
                 continue
 
-            print(login, event['type'], i)
             self.database.add_user_event(login, event['type'])
 
             i += 1

@@ -204,7 +204,7 @@ class Database:
     def add_user_event(self, login, event):
         sql = """
             UPDATE users
-            SET count_{0} = count_{0} + 1
+            SET count_{0} = IFNULL(count_{0}, 0) + 1
             WHERE login = %s
         """.format(event)
         self.cursor.execute(sql, (login,))
