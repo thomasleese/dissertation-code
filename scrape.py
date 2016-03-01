@@ -127,7 +127,7 @@ class Genderize:
             return '?', None
 
         params = {'name': name, 'apikey': self.api_key}
-        response = requests.get('http://api.genderize.io', params=params)
+        response = requests.get('https://api.genderize.io', params=params)
 
         headers = response.headers
         if 'X-Rate-Limit-Remaining' not in headers:
