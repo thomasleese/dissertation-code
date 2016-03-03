@@ -89,6 +89,21 @@ class Database:
             .format(update_str)
         self.cursor.execute(sql, values + [login])
 
+    def update_project(self, owner, name, fields):
+        for key in list(fields.keys()):
+            if fields[key] is None:
+                del fields[key]
+
+        keys = list(fields.keys())
+        values = list(fields.values())
+
+        fields_str = ', '.join(keys)
+        values_str = ', '.join(['%s'] * len(fields))
+        update_str = ', '.join('{} = %s'.format(k) for k in keys)
+        sql = 'UPDATE repositories SET {} WHERE owner = %s AND name = %s' \
+            .format(update_str)
+        self.cursor.execute(sql, values + [owner, name])
+
     def update_user_activity(self, first_active, last_active):
         sql1 = """
             UPDATE users

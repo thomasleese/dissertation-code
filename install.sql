@@ -19,5 +19,16 @@ CREATE TABLE repositories (
     owner VARCHAR(100),
     name VARCHAR(100),
 
+    language VARCHAR(100),
+    stargazers INT,
+    has_downloads BOOLEAN,
+    is_fork BOOLEAN,
+    has_issues BOOLEAN,
+    watchers INT,
+    open_issues INT,
+    size INT,
+    has_wiki INT,
+    forks INT,
+
     PRIMARY KEY (owner, name)
 )

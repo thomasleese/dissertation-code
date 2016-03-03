@@ -367,6 +367,32 @@ class Scraper:
         self.database.insert_many_repositories(names)
         self.database.commit()
 
+    def scrape_project_details(self, start_from):
+        i = 0
+
+        for event in self.events.iterate(start_from=start_from):
+            try:
+                repository = event['repository']
+            except KeyError:
+                continue
+
+            fields = {
+                'is_fork': repository['fork']
+            }
+
+            for field in ['language', 'stargazers', 'has_downloads', 'has_issues', 'watchers', 'open_issues', 'size', 'has_wiki', 'forks']:
+                fields[field] = repository.get(field, None)
+
+            self.database.update_project(repository['owner'], repository['name'], fields)
+
+            i += 1
+
+            if i > 100:
+                self.database.commit()
+                i = 0
+
+        self.database.commit()
+
 
 def scrape(scraper):
     print('Running scraper...')
@@ -385,6 +411,8 @@ def scrape(scraper):
         scraper.scrape_locations()
     elif sys.argv[1] == 'project_names':
         scraper.scrape_project_names(sys.argv[2])
+    elif sys.argv[1] == 'project_details':
+        scraper.scrape_project_details(sys.argv[2])
     else:
         raise RuntimeError(sys.argv[1])
 
