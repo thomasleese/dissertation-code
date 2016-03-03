@@ -14,3 +14,10 @@ CREATE TABLE users (
     gender_probability DECIMAL(5,4),
     deleted BOOLEAN
 );
+
+CREATE TABLE repositories (
+    owner VARCHAR(100),
+    name VARCHAR(100),
+
+    PRIMARY KEY (owner, name)
+)

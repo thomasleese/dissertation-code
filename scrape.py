@@ -348,6 +348,25 @@ class Scraper:
 
         print('Finished.')
 
+    def scrape_project_names(self, start_from):
+        names = set()
+
+        for event in self.events.iterate(start_from=start_from):
+            try:
+                repository = event['repository']
+            except KeyError:
+                continue
+
+            names.add((repository['owner'], repository['name']))
+
+            if len(names) >= 100000:
+                self.database.insert_many_repositories(names)
+                self.database.commit()
+                names = set()
+
+        self.database.insert_many_repositories(names)
+        self.database.commit()
+
 
 def scrape(scraper):
     print('Running scraper...')
@@ -364,6 +383,8 @@ def scrape(scraper):
         scraper.scrape_genders()
     elif sys.argv[1] == 'locations':
         scraper.scrape_locations()
+    elif sys.argv[1] == 'project_names':
+        scraper.scrape_project_names(sys.argv[2])
     else:
         raise RuntimeError(sys.argv[1])
 

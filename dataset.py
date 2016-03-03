@@ -70,6 +70,10 @@ class Database:
         sql = 'INSERT IGNORE INTO users (login) VALUES (%s)'
         self.cursor.executemany(sql, [(v,) for v in logins])
 
+    def insert_many_repositories(self, repos):
+        sql = 'INSERT IGNORE INTO repositories (owner, name) VALUES (%s, %s)'
+        self.cursor.executemany(sql, repos)
+
     def update_user(self, login, fields):
         for key in list(fields.keys()):
             if fields[key] is None:
